@@ -7,7 +7,11 @@ import (
 	"strings"
 )
 
-func collectEarthquake() {
+type EarthquakeCollector struct {
+	eqCollector Collector
+}
+
+func collectEvent(e Collector) string {
 	url := "http://sismologia.cl/events/listados/2019/09/20190910.html"
 
 	resp, err := http.Get(url)
@@ -51,5 +55,16 @@ func collectEarthquake() {
 		}
 	}
 	// Print to check the slice's content
-	fmt.Println(content)
+	content = append(content[:1], content[2:]...)
+	content[4] = cleanMagnitude(content)
+	return fmt.Sprint(content)
+}
+
+func cleanMagnitude(data []string) string {
+	magnitude := data[len(data)-1]
+	return strings.Split(magnitude, " ")[0]
+}
+
+func estimateEntropy(e Collector) int {
+	return 0
 }
