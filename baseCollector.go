@@ -3,28 +3,27 @@ package main
 import (
 	"fmt"
 	"golang.org/x/crypto/sha3"
-	"strings"
 	"time"
 )
 
 type Collector interface {
 	collectEvent() string
 	estimateEntropy() int
+	sourceID() int
 }
 
-func process(c Collector) {
+func process(c Collector, recordTimestamp time.Time) {
 	db := connectDB()
 	defer db.Close()
 
-	t1 := strings.Join(strings.Split(time.Now().UTC().String(), " ")[0:2], " ")
-	data := collectEvent(c)
-	t2 := strings.Join(strings.Split(time.Now().UTC().String(), " ")[0:2], " ")
+	data := c.collectEvent()
 
 	digest := generateDigest(data)
-	estimatedEntropy := estimateEntropy(c)
+	estimatedEntropy := c.estimateEntropy()
 
-	addEventStatement := `INSERT INTO events (timestamp_init, timestamp_end, raw_value, digest, entropy_est, status) VALUES ($1, $2, $3, $4, $5, $6)`
-	_, err := db.Exec(addEventStatement, t1, t2, data, digest, estimatedEntropy, 0)
+	addEventStatement := `INSERT INTO events (source_id, raw_event, entropy_estimation, digest, event_status, record_timestamp) 
+						  VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err := db.Exec(addEventStatement, c.sourceID(), data, estimatedEntropy, digest, 0, recordTimestamp)
 	if err != nil {
 		panic(err)
 	}

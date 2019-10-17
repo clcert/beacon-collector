@@ -8,10 +8,9 @@ import (
 )
 
 type EarthquakeCollector struct {
-	eqCollector Collector
 }
 
-func collectEvent(e Collector) string {
+func (e EarthquakeCollector) collectEvent() string {
 	url := "http://sismologia.cl/events/listados/2019/09/20190910.html"
 
 	resp, err := http.Get(url)
@@ -65,6 +64,10 @@ func cleanMagnitude(data []string) string {
 	return strings.Split(magnitude, " ")[0]
 }
 
-func estimateEntropy(e Collector) int {
+func (e EarthquakeCollector) estimateEntropy() int {
+	return 0
+}
+
+func (e EarthquakeCollector) sourceID() int {
 	return 0
 }
