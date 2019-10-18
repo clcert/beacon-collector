@@ -7,8 +7,7 @@ import (
 	"net/http"
 )
 
-type EthCollector struct {
-}
+type EthCollector struct{}
 
 func (e EthCollector) collectEvent() string {
 	ethAPI := "http://200.9.100.27/eth"

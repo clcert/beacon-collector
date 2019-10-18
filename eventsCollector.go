@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 func collectEvents() {
 	db := connectDB()
@@ -17,15 +19,15 @@ func collectEvents() {
 	// TODO: Parallelize this
 
 	var eqCollector EarthquakeCollector
-	process(eqCollector, nextRecordTimestamp)
+	go process(eqCollector, nextRecordTimestamp)
 
-	//var twCollector TwitterCollector
-	//process(twCollector, nextRecordTimestamp)
+	var twCollector TwitterCollector
+	go process(twCollector, nextRecordTimestamp)
 
-	//var radioCollector RadioCollector
-	//process(radioCollector, nextRecordTimestamp)
+	// var radioCollector RadioCollector
+	// go process(radioCollector, nextRecordTimestamp)
 
 	var ethCollector EthCollector
-	process(ethCollector, nextRecordTimestamp)
+	go process(ethCollector, nextRecordTimestamp)
 
 }

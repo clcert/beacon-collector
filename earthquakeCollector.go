@@ -7,8 +7,7 @@ import (
 	"strings"
 )
 
-type EarthquakeCollector struct {
-}
+type EarthquakeCollector struct{}
 
 func (e EarthquakeCollector) collectEvent() string {
 	url := "http://sismologia.cl/events/listados/2019/09/20190910.html"
@@ -56,6 +55,7 @@ func (e EarthquakeCollector) collectEvent() string {
 	// Print to check the slice's content
 	content = append(content[:1], content[2:]...)
 	content[4] = cleanMagnitude(content)
+
 	return fmt.Sprint(content)
 }
 
