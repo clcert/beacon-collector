@@ -10,7 +10,6 @@ import (
 type TwitterCollector struct{}
 
 func (t TwitterCollector) collectEvent() string {
-	fmt.Println("Twitter!")
 	config := oauth1.NewConfig("qmHP2muP1cshDiYk1hHOTP1tN", "51XgOonYmwlPeqfkTHd6OA89AihLJ8Y5t6M684U64Vo3g82OfX")
 	token := oauth1.NewToken("937756850174545920-V2BQWRx07NZ4g81hrAKXrctT9raolUo", "tsTM7E1rY3aqhlHOIlX692NfVGaLPVZPgJnJx7TrZ77hG")
 	httpClient := config.Client(oauth1.NoContext, token)
@@ -22,8 +21,6 @@ func (t TwitterCollector) collectEvent() string {
 	demux.Tweet = func(tweet *twitter.Tweet) {
 		fmt.Println(tweet.Text)
 	}
-
-	fmt.Println("Starting Stream...")
 
 	// FILTER
 	filterParams := &twitter.StreamFilterParams{

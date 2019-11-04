@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"golang.org/x/crypto/sha3"
+	"sync"
 	"time"
 )
 
@@ -12,7 +13,9 @@ type Collector interface {
 	sourceID() int
 }
 
-func process(c Collector, recordTimestamp time.Time) {
+func process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	db := connectDB()
 	defer db.Close()
 

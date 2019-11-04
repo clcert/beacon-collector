@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 )
 
@@ -16,18 +17,24 @@ func collectEvents() {
 	nextRecordTimestamp = time.Date(year, month, day,
 		nextRecordTimestamp.Hour(), nextRecordTimestamp.Minute(), 0, 0, nextRecordTimestamp.Location())
 
-	// TODO: Parallelize this
+	var wg sync.WaitGroup
 
 	var eqCollector EarthquakeCollector
-	go process(eqCollector, nextRecordTimestamp)
+	wg.Add(1)
+	go process(eqCollector, nextRecordTimestamp, &wg)
 
 	var twCollector TwitterCollector
-	go process(twCollector, nextRecordTimestamp)
+	wg.Add(1)
+	go process(twCollector, nextRecordTimestamp, &wg)
 
-	// var radioCollector RadioCollector
-	// go process(radioCollector, nextRecordTimestamp)
+	var radioCollector RadioCollector
+	wg.Add(1)
+	process(radioCollector, nextRecordTimestamp, &wg)
 
 	var ethCollector EthCollector
-	go process(ethCollector, nextRecordTimestamp)
+	wg.Add(1)
+	go process(ethCollector, nextRecordTimestamp, &wg)
+
+	wg.Wait()
 
 }

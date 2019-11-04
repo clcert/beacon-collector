@@ -22,7 +22,7 @@ func (e EthCollector) collectEvent() string {
 	defer body.Close()
 
 	response, _ := ioutil.ReadAll(body)
-	blockInfo := make(map[string](map[string]string))
+	blockInfo := make(map[string]map[string]string)
 	_ = json.Unmarshal(response, &blockInfo)
 	lastBlockHash := blockInfo["result"]["hash"][2:]
 	lastBlockNumber := blockInfo["result"]["number"][2:]

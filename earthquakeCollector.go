@@ -5,12 +5,18 @@ import (
 	"golang.org/x/net/html"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type EarthquakeCollector struct{}
 
 func (e EarthquakeCollector) collectEvent() string {
-	url := "http://sismologia.cl/events/listados/2019/09/20190910.html"
+	now := time.Now().UTC()
+	currentYear := string(now.Year())
+	currentMonth := now.Month().String()
+	currentDay := string(now.Day())
+	baseURL := "http://sismologia.cl/events/listados/2019/09/20190910.html"
+	url := baseURL + currentYear + "/" + currentMonth + "/" + currentYear + currentMonth + currentDay + ".html"
 
 	resp, err := http.Get(url)
 	// handle the error if there is one
