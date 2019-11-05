@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/net/html"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -12,11 +13,12 @@ type EarthquakeCollector struct{}
 
 func (e EarthquakeCollector) collectEvent() string {
 	now := time.Now().UTC()
-	currentYear := string(now.Year())
-	currentMonth := now.Month().String()
-	currentDay := string(now.Day())
-	baseURL := "http://sismologia.cl/events/listados/2019/09/20190910.html"
-	url := baseURL + currentYear + "/" + currentMonth + "/" + currentYear + currentMonth + currentDay + ".html"
+
+	currentYear := strconv.Itoa(now.Year())
+	currentMonth := strings.Split(now.Format("2006#01#02"), "#")[1]
+	baseURL := "http://sismologia.cl/events/listados/"
+	dateFormat := now.Format("20060102")
+	url := baseURL + currentYear + "/" + currentMonth + "/" + dateFormat + ".html"
 
 	resp, err := http.Get(url)
 	// handle the error if there is one

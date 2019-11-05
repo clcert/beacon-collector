@@ -6,8 +6,8 @@ import (
 )
 
 func collectEvents() {
-	db := connectDB()
-	defer db.Close()
+	//db := connectDB()
+	//defer db.Close()
 
 	now := time.Now().UTC()
 	nextRecordTimestamp := now.Add(time.Minute)
@@ -31,10 +31,13 @@ func collectEvents() {
 	wg.Add(1)
 	process(radioCollector, nextRecordTimestamp, &wg)
 
-	var ethCollector EthCollector
+	var ethCollector EthereumCollector
 	wg.Add(1)
 	go process(ethCollector, nextRecordTimestamp, &wg)
 
 	wg.Wait()
+
+	externalEventsCollected := getExternalEvents(nextRecordTimestamp)
+	generateExternalEventField(externalEventsCollected, nextRecordTimestamp)
 
 }

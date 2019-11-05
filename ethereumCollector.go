@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-type EthCollector struct{}
+type EthereumCollector struct{}
 
-func (e EthCollector) collectEvent() string {
+func (e EthereumCollector) collectEvent() string {
 	ethAPI := "http://200.9.100.27/eth"
 	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["latest", false]}`)
 	resp, err := http.Post(ethAPI, "application/json", bytes.NewReader(jsonStr))
@@ -30,10 +30,10 @@ func (e EthCollector) collectEvent() string {
 	return lastBlockHash + " " + lastBlockNumber
 }
 
-func (e EthCollector) estimateEntropy() int {
+func (e EthereumCollector) estimateEntropy() int {
 	return 0
 }
 
-func (e EthCollector) sourceID() int {
+func (e EthereumCollector) sourceID() int {
 	return 1
 }
