@@ -6,9 +6,6 @@ import (
 )
 
 func collectEvents() {
-	//db := connectDB()
-	//defer db.Close()
-
 	now := time.Now().UTC()
 	nextRecordTimestamp := now.Add(time.Minute)
 	year, month, day := nextRecordTimestamp.Date()

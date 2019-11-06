@@ -39,7 +39,8 @@ func generateExternalEventField(externalEvents []string, timestamp time.Time) {
 	db := connectDB()
 	defer db.Close()
 
-	externalEvent := vdf(externalEvents)
+	hashedEvents := hashEvents(externalEvents)
+	externalEvent := vdf(hashedEvents)
 	addEventStatement := `INSERT INTO external_events (value, record_timestamp) VALUES ($1, $2)`
 
 	_, err := db.Exec(addEventStatement, hex.EncodeToString(externalEvent[:]), timestamp)
@@ -49,11 +50,16 @@ func generateExternalEventField(externalEvents []string, timestamp time.Time) {
 
 }
 
-func vdf(events []string) [64]byte {
+// H(e1 || e2 || ... || en)
+func hashEvents(events []string) [64]byte {
 	var concatenatedEvents string
 	for _, l := range events {
 		concatenatedEvents = concatenatedEvents + l
 	}
 	byteEvents := []byte(concatenatedEvents)
 	return sha3.Sum512(byteEvents)
+}
+
+func vdf(events [64]byte) [64]byte {
+	return sha3.Sum512(events[:])
 }
