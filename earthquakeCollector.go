@@ -61,10 +61,14 @@ func (e EarthquakeCollector) collectEvent() string {
 		}
 	}
 	// Print to check the slice's content
-	content = append(content[:1], content[2:]...)
-	content[4] = cleanMagnitude(content)
+	if content != nil {
+		content = append(content[:1], content[2:]...)
+		content[4] = cleanMagnitude(content)
+		return fmt.Sprint(content)
+	} else {
+		return ""
+	}
 
-	return fmt.Sprint(content)
 }
 
 func cleanMagnitude(data []string) string {
