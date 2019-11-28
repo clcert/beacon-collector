@@ -12,7 +12,7 @@ func getExternalEvents(timestamp time.Time) []string {
 
 	var externalEvents []string
 
-	getEventsStatement := `SELECT digest FROM events WHERE pulse_timestamp = $1`
+	getEventsStatement := `SELECT digest FROM events_collected WHERE pulse_timestamp = $1`
 	rows, err := db.Query(getEventsStatement, timestamp)
 	if err != nil {
 		panic(err)

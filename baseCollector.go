@@ -24,7 +24,7 @@ func process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	digest := generateDigest(data)
 	estimatedEntropy := c.estimateEntropy()
 
-	addEventStatement := `INSERT INTO events (source_id, raw_event, entropy_estimation, digest, event_status, pulse_timestamp) 
+	addEventStatement := `INSERT INTO events_collected (source_id, raw_event, entropy_estimation, digest, event_status, pulse_timestamp) 
 						  VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err := db.Exec(addEventStatement, c.sourceID(), data, estimatedEntropy, digest, 0, recordTimestamp)
 	if err != nil {
