@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/hex"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -12,6 +13,10 @@ func (r RadioCollector) collectEvent() string {
 	streamURL := "http://200.89.71.21:8000/;"
 	resp, _ := http.Get(streamURL)
 
+	if resp == nil {
+		log.Error("Failed to get Radio event")
+		return "0"
+	}
 	reader := bufio.NewReader(resp.Body)
 	var audioBytes []byte
 	for i := 0; i <= 99839; i++ {

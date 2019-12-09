@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"time"
 )
@@ -15,14 +16,18 @@ func getExternalEvents(timestamp time.Time) []string {
 	getEventsStatement := `SELECT digest FROM events_collected WHERE pulse_timestamp = $1`
 	rows, err := db.Query(getEventsStatement, timestamp)
 	if err != nil {
-		panic(err)
+		log.WithFields(log.Fields{
+			"pulseTimestamp": timestamp,
+		}).Panic("Failed to get events collected")
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var externalEvent string
 		err = rows.Scan(&externalEvent)
 		if err != nil {
-			panic(err)
+			log.WithFields(log.Fields{
+				"pulseTimestamp": timestamp,
+			}).Panic("No events collected for this pulse")
 		}
 		externalEvents = append(externalEvents, externalEvent)
 	}
@@ -45,7 +50,9 @@ func generateExternalEventField(externalEvents []string, timestamp time.Time) {
 
 	_, err := db.Exec(addEventStatement, hex.EncodeToString(externalEvent[:]), timestamp)
 	if err != nil {
-		panic(err)
+		log.WithFields(log.Fields{
+			"pulseTimestamp": timestamp,
+		}).Panic("Failed to add External Events to database")
 	}
 
 }
