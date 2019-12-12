@@ -66,7 +66,8 @@ func (e EarthquakeCollector) collectEvent() string {
 		content[4] = cleanMagnitude(content)
 		return fmt.Sprint(content)
 	} else {
-		return ""
+		log.Error("Failed to get Earthquake event")
+		return "0"
 	}
 
 }

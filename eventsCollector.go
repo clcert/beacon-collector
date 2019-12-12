@@ -6,6 +6,8 @@ import (
 )
 
 func collectEvents() {
+	log.Debug("Collecting Events...")
+
 	now := time.Now().UTC()
 	nextRecordTimestamp := now.Add(time.Minute)
 	year, month, day := nextRecordTimestamp.Date()
@@ -33,6 +35,8 @@ func collectEvents() {
 	go process(ethCollector, nextRecordTimestamp, &wg)
 
 	wg.Wait()
+
+	log.Debug("Events Collected!")
 
 	externalEventsCollected := getExternalEvents(nextRecordTimestamp)
 	generateExternalEventField(externalEventsCollected, nextRecordTimestamp)

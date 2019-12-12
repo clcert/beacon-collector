@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
-	"log"
 	"time"
 )
 
@@ -34,7 +33,8 @@ func (t TwitterCollector) collectEvent() string {
 	}
 	stream, err := client.Streams.Filter(filterParams)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Failed to get Twitter event")
+		return "0"
 	}
 
 	go demux.HandleChan(stream.Messages)

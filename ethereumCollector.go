@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
@@ -17,6 +16,7 @@ func (e EthereumCollector) collectEvent() string {
 
 	if err != nil {
 		log.Error("Failed to get Ethereum event")
+		return "0"
 	}
 
 	body := resp.Body

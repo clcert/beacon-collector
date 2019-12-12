@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"sync"
 	"time"
@@ -29,7 +29,7 @@ func process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 						  VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err := db.Exec(addEventStatement, c.sourceID(), data, estimatedEntropy, digest, 0, recordTimestamp)
 	if err != nil {
-		log.WithFields(log.Fields{
+		log.WithFields(logrus.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceId":       c.sourceID(),
 		}).Panic("Failed to add event to database")
