@@ -38,7 +38,5 @@ func collectEvents() {
 
 	log.Debug("Events Collected!")
 
-	externalEventsCollected := getExternalEvents(nextRecordTimestamp)
-	generateExternalEventField(externalEventsCollected, nextRecordTimestamp)
-
+	generateExternalValue(getEventsCollectedHashed(nextRecordTimestamp), nextRecordTimestamp)
 }

@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-func getExternalEvents(timestamp time.Time) []string {
+func getEventsCollectedHashed(timestamp time.Time) []string {
 	db := connectDB()
 	defer db.Close()
 
-	var externalEvents []string
+	var eventsCollectedHashed []string
 
-	getEventsStatement := `SELECT digest FROM events_collected WHERE pulse_timestamp = $1`
-	rows, err := db.Query(getEventsStatement, timestamp)
+	getEventsCollectedHashedStatement := `SELECT digest FROM events_collected WHERE pulse_timestamp = $1`
+	rows, err := db.Query(getEventsCollectedHashedStatement, timestamp)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"pulseTimestamp": timestamp,
@@ -22,29 +22,29 @@ func getExternalEvents(timestamp time.Time) []string {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var externalEvent string
-		err = rows.Scan(&externalEvent)
+		var eventCollectedHashed string
+		err = rows.Scan(&eventCollectedHashed)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"pulseTimestamp": timestamp,
 			}).Panic("No events collected for this pulse")
 		}
-		externalEvents = append(externalEvents, externalEvent)
+		eventsCollectedHashed = append(eventsCollectedHashed, eventCollectedHashed)
 	}
 	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
 
-	return externalEvents
+	return eventsCollectedHashed
 
 }
 
-func generateExternalEventField(externalEvents []string, timestamp time.Time) {
+func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 	db := connectDB()
 	defer db.Close()
 
-	hashedEvents := hashEvents(externalEvents)
+	hashedEvents := hashEvents(eventsCollected)
 	externalEvent := vdf(hashedEvents)
 	addEventStatement := `INSERT INTO external_events (value, pulse_timestamp) VALUES ($1, $2)`
 
