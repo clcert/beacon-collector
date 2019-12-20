@@ -46,7 +46,7 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	hashedEvents := hashEvents(eventsCollected)
 	externalEvent := vdf(hashedEvents)
-	addEventStatement := `INSERT INTO external_events (value, pulse_timestamp, status) VALUES ($1, $2, $3)`
+	addEventStatement := `INSERT INTO external_events (value, pulse_timestamp, status_collected) VALUES ($1, $2, $3)`
 
 	_, err := db.Exec(addEventStatement, hex.EncodeToString(externalEvent[:]), timestamp, 0)
 	if err != nil {

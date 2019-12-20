@@ -1,0 +1,18 @@
+External Sources:
+1. Earthquakes: from the web of Centro Sismológico Nacional (https://sismologia.cl) the information of the last
+earthquake (UTC Date, Latitude, Longitude, Depth and Magnitude) produced in Chilean territory. Intended update frequency:
+every minute. Intended update moment: at the beginning of each minute (0" second mark). Repeat until new available value: yes.
+Local hashing: yes. Default URL for access: http://sismologia.cl/events/listados/<YYYY>/<MM>/<YYYY><MM><DD>.html (where
+<YYYY>, <MM>, and <DD>, is the year, month and day of the pulse where the event will be used), then need to check the last
+earthquake produced BEFORE the date of the pulse. Recommended sampling trials: immediately perform successive sampling.
+Fallback options: None.
+2. Radio: from the web of Radio Universidad de Chile (https://radio.uchile.cl) the byte-stream referring to the online
+signal of the radio station. Intended update frequency: every minute. Intended update moment: at the beginning of each
+minute (0" second mark) will recollect 99840 bytes of the stream (approx. 5 seconds). Repeat until new available value: yes.
+Local hashing: yes. Default URL for access: http://200.89.71.21:8000/; (online stream of the radio station). Recommended
+sampling trials: immediately perform successive sampling. Fallback options: None.
+3. Twitter:
+4. Ethereum Blockchain:
+All the hashed values obtained, in parallel, from the 4 sources described before will be concatenated and be used as
+input of a VDF (Verifiable Delay Function) <NEED TO SPECIFY WHICH FUNCTION AND PARAMETERS> whose output will be the
+external value used in the pulse generated in the current minute.
