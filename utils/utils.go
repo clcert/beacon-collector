@@ -1,22 +1,23 @@
-package main
+package utils
 
 import (
 	"encoding/hex"
-	"github.com/sirupsen/logrus"
+	"github.com/clcert/beacon-collector-go/db"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"time"
 )
 
 func getEventsCollectedHashed(timestamp time.Time) []string {
-	db := connectDB()
-	defer db.Close()
+	dbConn := db.ConnectDB()
+	defer dbConn.Close()
 
 	var eventsCollectedHashed []string
 
 	getEventsCollectedHashedStatement := `SELECT digest FROM events_collected WHERE pulse_timestamp = $1`
-	rows, err := db.Query(getEventsCollectedHashedStatement, timestamp)
+	rows, err := dbConn.Query(getEventsCollectedHashedStatement, timestamp)
 	if err != nil {
-		log.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
 		}).Panic("Failed to get events collected")
 	}
@@ -25,7 +26,7 @@ func getEventsCollectedHashed(timestamp time.Time) []string {
 		var eventCollectedHashed string
 		err = rows.Scan(&eventCollectedHashed)
 		if err != nil {
-			log.WithFields(logrus.Fields{
+			log.WithFields(log.Fields{
 				"pulseTimestamp": timestamp,
 			}).Panic("No events collected for this pulse")
 		}
@@ -41,7 +42,7 @@ func getEventsCollectedHashed(timestamp time.Time) []string {
 }
 
 func generateExternalValue(eventsCollected []string, timestamp time.Time) {
-	db := connectDB()
+	db := db.ConnectDB()
 	defer db.Close()
 
 	hashedEvents := hashEvents(eventsCollected)
@@ -50,7 +51,7 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	_, err := db.Exec(addEventStatement, hex.EncodeToString(externalEvent[:]), timestamp, 0)
 	if err != nil {
-		log.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
 		}).Panic("Failed to add External Events to database")
 	}

@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-type DBConfig struct {
+type Config struct {
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
 	User     string `json:"user"`
@@ -17,9 +17,9 @@ type DBConfig struct {
 	Name     string `json:"dbname"`
 }
 
-func connectDB() *sql.DB {
+func ConnectDB() *sql.DB {
 	// Open our dbConfig
-	jsonFile, err := os.Open("dbConfig.json")
+	jsonFile, err := os.Open("db/dbConfig.json")
 	// if we os.Open returns an error then handle it
 	if err != nil {
 		fmt.Println(err)
@@ -27,7 +27,7 @@ func connectDB() *sql.DB {
 	// defer the closing of our dbConfig so that we can parse it later on
 	defer jsonFile.Close()
 
-	var dbConfig DBConfig
+	var dbConfig Config
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	json.Unmarshal(byteValue, &dbConfig)
 

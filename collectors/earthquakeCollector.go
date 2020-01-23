@@ -1,7 +1,8 @@
-package main
+package collectors
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 	"net/http"
 	"strconv"

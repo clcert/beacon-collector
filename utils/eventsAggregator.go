@@ -1,11 +1,13 @@
-package main
+package utils
 
 import (
+	"github.com/clcert/beacon-collector-go/collectors"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
-func collectEvents() {
+func AggregateEvents() {
 	log.Debug("Collecting Events...")
 
 	now := time.Now().UTC()
@@ -18,21 +20,21 @@ func collectEvents() {
 
 	var wg sync.WaitGroup
 
-	var eqCollector EarthquakeCollector
+	var eqCollector collectors.EarthquakeCollector
 	wg.Add(1)
-	go process(eqCollector, nextRecordTimestamp, &wg)
+	go collectors.Process(eqCollector, nextRecordTimestamp, &wg)
 
-	var twCollector TwitterCollector
+	var twCollector collectors.TwitterCollector
 	wg.Add(1)
-	go process(twCollector, nextRecordTimestamp, &wg)
+	go collectors.Process(twCollector, nextRecordTimestamp, &wg)
 
-	var radioCollector RadioCollector
+	var radioCollector collectors.RadioCollector
 	wg.Add(1)
-	process(radioCollector, nextRecordTimestamp, &wg)
+	collectors.Process(radioCollector, nextRecordTimestamp, &wg)
 
-	var ethCollector EthereumCollector
+	var ethCollector collectors.EthereumCollector
 	wg.Add(1)
-	go process(ethCollector, nextRecordTimestamp, &wg)
+	go collectors.Process(ethCollector, nextRecordTimestamp, &wg)
 
 	wg.Wait()
 

@@ -1,8 +1,9 @@
-package main
+package collectors
 
 import (
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 

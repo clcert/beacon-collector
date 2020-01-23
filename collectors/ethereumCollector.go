@@ -1,8 +1,9 @@
-package main
+package collectors
 
 import (
 	"bytes"
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )

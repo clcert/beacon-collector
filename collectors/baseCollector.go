@@ -1,8 +1,9 @@
-package main
+package collectors
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/clcert/beacon-collector-go/db"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"sync"
 	"time"
@@ -14,11 +15,11 @@ type Collector interface {
 	sourceID() int
 }
 
-func process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
+func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	db := connectDB()
-	defer db.Close()
+	dbConn := db.ConnectDB()
+	defer dbConn.Close()
 
 	data := c.collectEvent()
 
@@ -27,9 +28,9 @@ func process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 
 	addEventStatement := `INSERT INTO events_collected (source_id, raw_event, entropy_estimation, digest, event_status, pulse_timestamp) 
 						  VALUES ($1, $2, $3, $4, $5, $6)`
-	_, err := db.Exec(addEventStatement, c.sourceID(), data, estimatedEntropy, digest, 0, recordTimestamp)
+	_, err := dbConn.Exec(addEventStatement, c.sourceID(), data, estimatedEntropy, digest, 0, recordTimestamp)
 	if err != nil {
-		log.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceId":       c.sourceID(),
 		}).Panic("Failed to add event to database")

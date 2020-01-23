@@ -1,8 +1,9 @@
-package main
+package collectors
 
 import (
 	"bufio"
 	"encoding/hex"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
