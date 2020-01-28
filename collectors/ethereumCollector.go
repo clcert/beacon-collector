@@ -20,6 +20,10 @@ func (e EthereumCollector) collectEvent() string {
 		return "0"
 	}
 
+	if resp.StatusCode != 200 {
+		return "0"
+	}
+
 	body := resp.Body
 	defer body.Close()
 
