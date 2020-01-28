@@ -33,7 +33,7 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceId":       c.sourceID(),
-		}).Panic("Failed to add event to database")
+		}).Error("Failed to add event to database")
 	}
 
 }
