@@ -9,7 +9,7 @@ import (
 
 type TwitterCollector struct{}
 
-func (t TwitterCollector) collectEvent() string {
+func (t TwitterCollector) collectEvent() (string, string) {
 	config := oauth1.NewConfig("qmHP2muP1cshDiYk1hHOTP1tN", "51XgOonYmwlPeqfkTHd6OA89AihLJ8Y5t6M684U64Vo3g82OfX")
 	token := oauth1.NewToken("937756850174545920-q0oGAyeCZ8wHrKSBFLVTgpOhJ1b8AAY", "oo0Gk6VPSyZ7N3eyzNy0adO7p4ABCv6ze2XuChRWtJHRF")
 	httpClient := config.Client(oauth1.NoContext, token)
@@ -35,7 +35,7 @@ func (t TwitterCollector) collectEvent() string {
 	stream, err := client.Streams.Filter(filterParams)
 	if err != nil {
 		log.Error("Failed to get Twitter event")
-		return "0"
+		return "0", "0"
 	}
 
 	go demux.HandleChan(stream.Messages)
@@ -52,7 +52,7 @@ func (t TwitterCollector) collectEvent() string {
 		}
 	}
 
-	return allTweets
+	return allTweets, "0"
 }
 
 func (t TwitterCollector) estimateEntropy() int {

@@ -12,7 +12,7 @@ import (
 
 type EarthquakeCollector struct{}
 
-func (e EarthquakeCollector) collectEvent() string {
+func (e EarthquakeCollector) collectEvent() (string, string) {
 	now := time.Now().UTC()
 
 	currentYear := strconv.Itoa(now.Year())
@@ -65,10 +65,10 @@ func (e EarthquakeCollector) collectEvent() string {
 	if content != nil {
 		content = append(content[:1], content[2:]...)
 		content[4] = cleanMagnitude(content)
-		return fmt.Sprint(content)
+		return fmt.Sprint(content), "0"
 	} else {
 		log.Error("Failed to get Earthquake event")
-		return "0"
+		return "0", "0"
 	}
 
 }

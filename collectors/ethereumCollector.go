@@ -10,18 +10,18 @@ import (
 
 type EthereumCollector struct{}
 
-func (e EthereumCollector) collectEvent() string {
+func (e EthereumCollector) collectEvent() (string, string) {
 	ethAPI := "http://200.9.100.27/eth"
 	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["latest", false]}`)
 	resp, err := http.Post(ethAPI, "application/json", bytes.NewReader(jsonStr))
 
 	if err != nil {
 		log.Error("Failed to get Ethereum event")
-		return "0"
+		return "0", "0"
 	}
 
 	if resp.StatusCode != 200 {
-		return "0"
+		return "0", "0"
 	}
 
 	body := resp.Body
@@ -33,7 +33,7 @@ func (e EthereumCollector) collectEvent() string {
 	lastBlockHash := blockInfo["result"]["hash"][2:]
 	lastBlockNumber := blockInfo["result"]["number"][2:]
 
-	return lastBlockHash + " " + lastBlockNumber
+	return lastBlockHash + " " + lastBlockNumber, "0"
 }
 
 func (e EthereumCollector) estimateEntropy() int {
