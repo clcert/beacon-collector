@@ -9,6 +9,10 @@ import (
 
 type TwitterCollector struct{}
 
+func (t TwitterCollector) sourceName() string {
+	return "twitter"
+}
+
 func (t TwitterCollector) collectEvent() (string, string) {
 	config := oauth1.NewConfig("qmHP2muP1cshDiYk1hHOTP1tN", "51XgOonYmwlPeqfkTHd6OA89AihLJ8Y5t6M684U64Vo3g82OfX")
 	token := oauth1.NewToken("937756850174545920-q0oGAyeCZ8wHrKSBFLVTgpOhJ1b8AAY", "oo0Gk6VPSyZ7N3eyzNy0adO7p4ABCv6ze2XuChRWtJHRF")

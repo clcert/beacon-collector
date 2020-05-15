@@ -11,6 +11,10 @@ import (
 
 type RadioCollector struct{}
 
+func (r RadioCollector) sourceName() string {
+	return "radio"
+}
+
 func (r RadioCollector) collectEvent() (string, string) {
 	streamURL := "http://200.89.71.21:8000/;"
 	resp, _ := http.Get(streamURL)
