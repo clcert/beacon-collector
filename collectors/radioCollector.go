@@ -74,6 +74,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 	reader := bufio.NewReader(resp.Body)
 	var firstFrame []byte
 	var audioBytes []byte
+	var invalidCounter int
 	for frameNumber := 0; frameNumber < 300; frameNumber++ {
 		b, _ := reader.ReadByte()
 		audioBytes = append(audioBytes, b)
@@ -140,6 +141,15 @@ func (r RadioCollector) collectEvent() (string, string) {
 			audioBytes = append(audioBytes, b)
 			if frameNumber == 0 {
 				firstFrame = append(firstFrame, b)
+			}
+		}
+		// check first frame hash property (first byte equals 0)
+		if frameNumber == 0 {
+			firstFrameHashedHex := fmt.Sprintf("%x", sha3.Sum512(firstFrame))
+			if firstFrameHashedHex[0:2] != "00" {
+				invalidCounter += 1
+				frameNumber -= 1
+				firstFrame = []byte{}
 			}
 		}
 	}
