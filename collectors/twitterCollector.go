@@ -1,58 +1,132 @@
 package collectors
 
 import (
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
-	log "github.com/sirupsen/logrus"
+	"bufio"
+	"bytes"
+	"container/heap"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
 type TwitterCollector struct{}
 
-func (t TwitterCollector) collectEvent() (string, string) {
-	config := oauth1.NewConfig("qmHP2muP1cshDiYk1hHOTP1tN", "51XgOonYmwlPeqfkTHd6OA89AihLJ8Y5t6M684U64Vo3g82OfX")
-	token := oauth1.NewToken("937756850174545920-q0oGAyeCZ8wHrKSBFLVTgpOhJ1b8AAY", "oo0Gk6VPSyZ7N3eyzNy0adO7p4ABCv6ze2XuChRWtJHRF")
-	httpClient := config.Client(oauth1.NoContext, token)
+type CollectedTweet struct {
+	Id        string `json:"id"`
+	CreatedAt string `json:"created_at"`
+	AuthorId  string `json:"author_id"`
+	Text      string `json:"text"`
+}
 
-	client := twitter.NewClient(httpClient)
+func (c CollectedTweet) String() string {
+	return fmt.Sprintf("[%s;%s;%s;%s]", c.Id, c.CreatedAt, c.AuthorId, c.Text)
+}
 
-	var tweets []string
+type TweetsHeap []CollectedTweet
 
-	// Convenience Demux demultiplexed stream messages
-	demux := twitter.NewSwitchDemux()
-	demux.Tweet = func(tweet *twitter.Tweet) {
-		if tweet.RetweetedStatus == nil {
-			tweets = append(tweets, tweet.Text)
-		}
+func (t TweetsHeap) Len() int {
+	return len(t)
+}
+
+func (t TweetsHeap) Less(i, j int) bool {
+	firstTweet := t[i]
+	secondTweet := t[j]
+	// firstDate, _ := time.Parse(time.RFC3339, firstTweet.CreatedAt)
+	// secondDate, _ := time.Parse(time.RFC3339, secondTweet.CreatedAt)
+
+	if firstTweet.Id < secondTweet.Id {
+		return true
 	}
+	return false
+}
 
-	// FILTER
-	filterParams := &twitter.StreamFilterParams{
-		Track:         []string{"mall"},
-		StallWarnings: twitter.Bool(true),
-		Locations:     []string{"-76.8507235", "-55.1671700", "-66.6756380", "-17.5227345"},
-	}
-	stream, err := client.Streams.Filter(filterParams)
+func (t TweetsHeap) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+
+func (t *TweetsHeap) Push(x interface{}) {
+	*t = append(*t, x.(CollectedTweet))
+}
+
+func (t *TweetsHeap) Pop() interface{} {
+	old := *t
+	n := len(old)
+	x := old[n-1]
+	*t = old[0 : n-1]
+	return x
+}
+
+func getTwitterCredentials() map[string]string {
+	configJsonFile, err := os.Open("collectors/twitterConfig.json")
 	if err != nil {
-		log.Error("Failed to get Twitter event")
-		return "0", "0"
+		fmt.Println(err)
 	}
+	defer configJsonFile.Close()
+	twitterCredentials := make(map[string]string)
+	byteValue, _ := ioutil.ReadAll(configJsonFile)
+	json.Unmarshal(byteValue, &twitterCredentials)
 
-	go demux.HandleChan(stream.Messages)
+	return twitterCredentials
+}
 
-	time.Sleep(15 * time.Second)
-	stream.Stop()
+func (t TwitterCollector) collectEvent() (string, string) {
+	twitterCredentials := getTwitterCredentials()
+	var consumerKey = twitterCredentials["consumer_key"]
+	var consumerSecret = twitterCredentials["consumer_secret"]
+	bearerToken := getBearerToken(consumerKey, consumerSecret)
 
-	var allTweets string
-	for idx, l := range tweets {
-		if idx == 0 {
-			allTweets = allTweets + l
-		} else {
-			allTweets = allTweets + "#" + l
+	var streamURL = "https://api.twitter.com/labs/1/tweets/stream/sample"
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", streamURL, nil)
+	req.Header.Set("Authorization", "Bearer "+bearerToken)
+	resp, _ := client.Do(req)
+
+	tweetReader := bufio.NewReader(resp.Body)
+
+	tweets := &TweetsHeap{}
+	heap.Init(tweets)
+	for {
+		tweetLine, _, _ := tweetReader.ReadLine()
+		collectedTweet := map[string]CollectedTweet{"data": {}}
+		_ = json.Unmarshal(tweetLine, &collectedTweet)
+		collectedTweetCreatedAt, _ := time.Parse(time.RFC3339, collectedTweet["data"].CreatedAt)
+		if 10 < collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() < 20 {
+			heap.Push(tweets, collectedTweet["data"])
+		}
+		if collectedTweetCreatedAt.Second() == 25 {
+			break
 		}
 	}
 
-	return allTweets, "0"
+	var tweetsResponse string
+	for tweets.Len() > 0 {
+		tweetsResponse += fmt.Sprint(heap.Pop(tweets).(CollectedTweet))
+	}
+
+	return tweetsResponse, "0"
+}
+
+func getBearerToken(consumerKey string, consumerSecret string) string {
+	credentials := []string{consumerKey, consumerSecret}
+	credentialsBase64 := base64.StdEncoding.EncodeToString([]byte(strings.Join(credentials, ":")))
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", "https://api.twitter.com/oauth2/token", bytes.NewBuffer([]byte("grant_type=client_credentials")))
+	req.Header.Add("Authorization", "Basic "+credentialsBase64)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	resp, _ := client.Do(req)
+	defer resp.Body.Close()
+
+	response, _ := ioutil.ReadAll(resp.Body)
+	authInfo := make(map[string]string)
+	_ = json.Unmarshal(response, &authInfo)
+
+	return authInfo["access_token"]
 }
 
 func (t TwitterCollector) estimateEntropy() int {
