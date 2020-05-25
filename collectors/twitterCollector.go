@@ -7,9 +7,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -86,6 +88,12 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	req, _ := http.NewRequest("GET", streamURL, nil)
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 	resp, _ := client.Do(req)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		log.Error("Twitter Response Status Code: " + strconv.Itoa(resp.StatusCode))
+		return "0", "0"
+	}
 
 	tweetReader := bufio.NewReader(resp.Body)
 
