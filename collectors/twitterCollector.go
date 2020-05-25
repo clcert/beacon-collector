@@ -77,6 +77,9 @@ func getTwitterCredentials() map[string]string {
 }
 
 func (t TwitterCollector) collectEvent() (string, string) {
+	startSecondMark := 5
+	extractingDuration := 10
+
 	twitterCredentials := getTwitterCredentials()
 	var consumerKey = twitterCredentials["consumer_key"]
 	var consumerSecret = twitterCredentials["consumer_secret"]
@@ -104,20 +107,26 @@ func (t TwitterCollector) collectEvent() (string, string) {
 		collectedTweet := map[string]CollectedTweet{"data": {}}
 		_ = json.Unmarshal(tweetLine, &collectedTweet)
 		collectedTweetCreatedAt, _ := time.Parse(time.RFC3339, collectedTweet["data"].CreatedAt)
-		if 10 < collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() < 20 {
+		if startSecondMark <= collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() <= (startSecondMark+extractingDuration) {
 			heap.Push(tweets, collectedTweet["data"])
 		}
-		if collectedTweetCreatedAt.Second() == 25 {
+		if collectedTweetCreatedAt.Second() == (startSecondMark+extractingDuration)+5 {
 			break
 		}
 	}
 
-	var tweetsResponse string
+	var tweetsResponse []CollectedTweet
+	var firstTimestamp string
 	for tweets.Len() > 0 {
-		tweetsResponse += fmt.Sprint(heap.Pop(tweets).(CollectedTweet))
+		tweetsResponse = append(tweetsResponse, heap.Pop(tweets).(CollectedTweet))
+		if firstTimestamp == "" {
+			firstTimestamp = tweetsResponse[0].CreatedAt
+		}
 	}
+	tweetsAsJSONBytes, _ := json.Marshal(tweetsResponse)
+	tweetsAsJSONString := string(tweetsAsJSONBytes)
 
-	return tweetsResponse, "0"
+	return tweetsAsJSONString, firstTimestamp
 }
 
 func getBearerToken(consumerKey string, consumerSecret string) string {
