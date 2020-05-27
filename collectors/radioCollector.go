@@ -150,6 +150,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 				invalidCounter += 1
 				frameNumber -= 1
 				firstFrame = []byte{}
+				audioBytes = []byte{}
 			}
 		}
 	}
