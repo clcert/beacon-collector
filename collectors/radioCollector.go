@@ -13,6 +13,7 @@ type RadioCollector struct{}
 
 func (r RadioCollector) sourceName() string {
 	return "radio"
+}
 
 const (
 	MPEG_2 int = iota
