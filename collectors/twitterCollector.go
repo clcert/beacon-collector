@@ -62,7 +62,3 @@ func (t TwitterCollector) collectEvent() (string, string) {
 func (t TwitterCollector) estimateEntropy() int {
 	return 0
 }
-
-func (t TwitterCollector) sourceID() int {
-	return 2
-}
