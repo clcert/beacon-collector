@@ -36,6 +36,7 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 		}).Error("Failed to add event to database")
 		panic(err)
 	}
+	log.Debugf("Source #%d Completed!", c.sourceID())
 }
 
 func generateDigest(s string) string {
