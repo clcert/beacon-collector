@@ -12,6 +12,10 @@ import (
 
 type EarthquakeCollector struct{}
 
+func (e EarthquakeCollector) sourceName() string {
+	return "earthquake"
+}
+
 func (e EarthquakeCollector) collectEvent() (string, string) {
 	now := time.Now().UTC()
 
@@ -79,9 +83,5 @@ func cleanMagnitude(data []string) string {
 }
 
 func (e EarthquakeCollector) estimateEntropy() int {
-	return 0
-}
-
-func (e EarthquakeCollector) sourceID() int {
 	return 0
 }

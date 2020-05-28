@@ -10,6 +10,10 @@ import (
 
 type EthereumCollector struct{}
 
+func (e EthereumCollector) sourceName() string {
+	return "ethereum"
+}
+
 func (e EthereumCollector) collectEvent() (string, string) {
 	ethAPI := "http://200.9.100.27/eth"
 	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["latest", false]}`)
@@ -38,8 +42,4 @@ func (e EthereumCollector) collectEvent() (string, string) {
 
 func (e EthereumCollector) estimateEntropy() int {
 	return 0
-}
-
-func (e EthereumCollector) sourceID() int {
-	return 1
 }

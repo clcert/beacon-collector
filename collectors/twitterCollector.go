@@ -18,6 +18,10 @@ import (
 
 type TwitterCollector struct{}
 
+func (t TwitterCollector) sourceName() string {
+	return "twitter"
+}
+
 type CollectedTweet struct {
 	Id        string `json:"id"`
 	CreatedAt string `json:"created_at"`
@@ -148,8 +152,4 @@ func getBearerToken(consumerKey string, consumerSecret string) string {
 
 func (t TwitterCollector) estimateEntropy() int {
 	return 0
-}
-
-func (t TwitterCollector) sourceID() int {
-	return 2
 }

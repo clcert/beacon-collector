@@ -10,9 +10,14 @@ import (
 )
 
 type Collector interface {
+	sourceName() string
 	collectEvent() (string, string)
 	estimateEntropy() int
-	sourceID() int
+}
+
+type Source struct {
+	Name string `json:"name"`
+	Id   int    `json:"id"`
 }
 
 func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
@@ -24,15 +29,16 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	data, metadata := c.collectEvent()
 
 	digest := generateDigest(data)
+	sourceName := c.sourceName()
 	estimatedEntropy := c.estimateEntropy()
 
-	addEventStatement := `INSERT INTO events_collected (source_id, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp) 
+	addEventStatement := `INSERT INTO events_collected (source_name, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp) 
 						  VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	_, err := dbConn.Exec(addEventStatement, c.sourceID(), data, metadata, estimatedEntropy, digest, 0, recordTimestamp)
+	_, err := dbConn.Exec(addEventStatement, sourceName, data, metadata, estimatedEntropy, digest, 0, recordTimestamp)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
-			"sourceId":       c.sourceID(),
+			"sourceName":     sourceName,
 		}).Error("Failed to add event to database")
 		panic(err)
 	}

@@ -11,6 +11,9 @@ import (
 
 type RadioCollector struct{}
 
+func (r RadioCollector) sourceName() string {
+	return "radio"
+
 const (
 	MPEG_2 int = iota
 	MPEG_1
@@ -164,8 +167,4 @@ func (r RadioCollector) collectEvent() (string, string) {
 
 func (r RadioCollector) estimateEntropy() int {
 	return 0
-}
-
-func (r RadioCollector) sourceID() int {
-	return 3
 }
