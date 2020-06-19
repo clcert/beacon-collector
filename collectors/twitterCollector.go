@@ -42,9 +42,12 @@ func (t TweetsHeap) Len() int {
 func (t TweetsHeap) Less(i, j int) bool {
 	firstTweet := t[i]
 	secondTweet := t[j]
-	// firstDate, _ := time.Parse(time.RFC3339, firstTweet.CreatedAt)
-	// secondDate, _ := time.Parse(time.RFC3339, secondTweet.CreatedAt)
+	firstDate, _ := time.Parse(time.RFC3339, firstTweet.CreatedAt)
+	secondDate, _ := time.Parse(time.RFC3339, secondTweet.CreatedAt)
 
+	if firstDate.Before(secondDate) {
+		return true
+	}
 	if firstTweet.Id < secondTweet.Id {
 		return true
 	}
@@ -106,6 +109,8 @@ func (t TwitterCollector) collectEvent() (string, string) {
 
 	tweets := &TweetsHeap{}
 	heap.Init(tweets)
+	// log.Debug("Start collecting tweets...")
+	// log.Debug(tweetReader.Size())
 	for {
 		tweetLine, _, _ := tweetReader.ReadLine()
 		collectedTweet := map[string]CollectedTweet{"data": {}}
@@ -118,6 +123,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 			break
 		}
 	}
+	// log.Debug("Finished collecting tweets...")
 
 	var tweetsResponse []CollectedTweet
 	var firstTimestamp string
@@ -131,6 +137,15 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	tweetsAsJSONString := string(tweetsAsJSONBytes)
 
 	return tweetsAsJSONString, firstTimestamp
+}
+
+func wireFormat(t []CollectedTweet) string {
+	var response string
+	for i := 0; i < len(t); i++ {
+		tweet := t[i]
+		response += tweet.CreatedAt + tweet.Id + tweet.AuthorId + tweet.Text
+	}
+	return response
 }
 
 func getBearerToken(consumerKey string, consumerSecret string) string {
@@ -152,4 +167,14 @@ func getBearerToken(consumerKey string, consumerSecret string) string {
 
 func (t TwitterCollector) estimateEntropy() int {
 	return 0
+}
+
+func (t TwitterCollector) processForDigest(s string) string {
+	var tweets []CollectedTweet
+	err := json.Unmarshal([]byte(s), &tweets)
+	if err != nil {
+		log.Error(err)
+	}
+	var response = wireFormat(tweets)
+	return response
 }

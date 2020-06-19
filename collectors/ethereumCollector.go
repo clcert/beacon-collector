@@ -43,3 +43,7 @@ func (e EthereumCollector) collectEvent() (string, string) {
 func (e EthereumCollector) estimateEntropy() int {
 	return 0
 }
+
+func (e EthereumCollector) processForDigest(s string) string {
+	return s
+}

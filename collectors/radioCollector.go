@@ -169,3 +169,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 func (r RadioCollector) estimateEntropy() int {
 	return 0
 }
+
+func (r RadioCollector) processForDigest(s string) string {
+	return s
+}

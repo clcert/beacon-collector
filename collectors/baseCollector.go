@@ -13,6 +13,7 @@ type Collector interface {
 	sourceName() string
 	collectEvent() (string, string)
 	estimateEntropy() int
+	processForDigest(string) string
 }
 
 type Source struct {
@@ -28,7 +29,7 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 
 	data, metadata := c.collectEvent()
 
-	digest := generateDigest(data)
+	digest := generateDigest(c, data)
 	sourceName := c.sourceName()
 	estimatedEntropy := c.estimateEntropy()
 
@@ -45,6 +46,7 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	log.Debugf("Source %s Completed!", c.sourceName())
 }
 
-func generateDigest(s string) string {
-	return fmt.Sprintf("%x", sha3.Sum512([]byte(s)))
+func generateDigest(c Collector, s string) string {
+	aux := c.processForDigest(s)
+	return fmt.Sprintf("%x", sha3.Sum512([]byte(aux)))
 }
