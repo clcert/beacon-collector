@@ -37,7 +37,7 @@ func (e EthereumCollector) collectEvent() (string, string) {
 	lastBlockHash := blockInfo["result"]["hash"][2:]
 	lastBlockNumber := blockInfo["result"]["number"][2:]
 
-	return lastBlockHash + " " + lastBlockNumber, "0"
+	return lastBlockHash, lastBlockNumber
 }
 
 func (e EthereumCollector) estimateEntropy() int {
