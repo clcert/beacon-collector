@@ -15,7 +15,7 @@ func (e EthereumCollector) sourceName() string {
 }
 
 func (e EthereumCollector) collectEvent() (string, string) {
-	ethAPI := "http://200.9.100.27/eth"
+	ethAPI := "https://eth.labs.clcert.cl"
 	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["latest", false]}`)
 	resp, err := http.Post(ethAPI, "application/json", bytes.NewReader(jsonStr))
 
