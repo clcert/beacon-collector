@@ -3,9 +3,11 @@ package collectors
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type EthereumCollector struct{}
@@ -39,10 +41,27 @@ func (e EthereumCollector) collectEvent() (string, string) {
 		log.Error(blockInfo["error"])
 		return "0", "0"
 	} else {
-		lastBlockHash := blockInfo["result"]["hash"][2:]
+		var lastBlockHash string
 		lastBlockNumber := blockInfo["result"]["number"][2:]
+		if isEven(lastBlockNumber) {
+			lastBlockHash = blockInfo["result"]["hash"][2:]
+		} else {
+			lastBlockHash = blockInfo["result"]["parentHash"][2:]
+			lastBlockNumber = subtractOne(lastBlockNumber)
+		}
 		return lastBlockHash, lastBlockNumber
 	}
+}
+
+func isEven(hexNumber string) bool {
+	num, _ := strconv.ParseInt(hexNumber, 16, 64)
+	return num%2 == 0
+}
+
+func subtractOne(hexNumber string) string {
+	num, _ := strconv.ParseInt(hexNumber, 16, 64)
+	output := num - 1
+	return fmt.Sprintf("%x", output)
 }
 
 func (e EthereumCollector) estimateEntropy() int {
