@@ -109,10 +109,8 @@ func (t TwitterCollector) collectEvent() (string, string) {
 
 	tweets := &TweetsHeap{}
 	heap.Init(tweets)
-	// log.Debug("Start collecting tweets...")
-	// log.Debug(tweetReader.Size())
 	for {
-		tweetLine, _, _ := tweetReader.ReadLine()
+		tweetLine, _ := tweetReader.ReadBytes('\n')
 		collectedTweet := map[string]CollectedTweet{"data": {}}
 		_ = json.Unmarshal(tweetLine, &collectedTweet)
 		collectedTweetCreatedAt, _ := time.Parse(time.RFC3339, collectedTweet["data"].CreatedAt)
@@ -123,7 +121,6 @@ func (t TwitterCollector) collectEvent() (string, string) {
 			break
 		}
 	}
-	// log.Debug("Finished collecting tweets...")
 
 	var tweetsResponse []CollectedTweet
 	var firstTimestamp string
