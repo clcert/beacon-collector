@@ -108,11 +108,12 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	tweetReader := bufio.NewReader(resp.Body)
 
 	tweets := &TweetsHeap{}
+	s := bufio.NewScanner(tweetReader)
 	heap.Init(tweets)
-	for {
-		tweetLine, _ := tweetReader.ReadBytes('\n')
+	for s.Scan() {
+		// tweetLine, _ := tweetReader.ReadBytes('\n')
 		collectedTweet := map[string]CollectedTweet{"data": {}}
-		_ = json.Unmarshal(tweetLine, &collectedTweet)
+		_ = json.Unmarshal(s.Bytes(), &collectedTweet)
 		collectedTweetCreatedAt, _ := time.Parse(time.RFC3339, collectedTweet["data"].CreatedAt)
 		if startSecondMark <= collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() <= (startSecondMark+extractingDuration) {
 			heap.Push(tweets, collectedTweet["data"])
