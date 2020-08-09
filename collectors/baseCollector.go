@@ -40,10 +40,10 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceName":     sourceName,
-		}).Error("Failed to add event to database")
+		}).Error("failed to add event to database")
 		panic(err)
 	}
-	log.Debugf("Source %s Completed!", c.sourceName())
+	log.Debugf("complete %s collection", c.sourceName())
 }
 
 func generateDigest(c Collector, s string) string {

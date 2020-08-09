@@ -101,7 +101,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		log.Error("Twitter Response Status Code: " + strconv.Itoa(resp.StatusCode))
+		log.Error("twitter response error, status code: " + strconv.Itoa(resp.StatusCode))
 		return "0", "0"
 	}
 
@@ -137,7 +137,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	return tweetsAsJSONString, firstTimestamp
 }
 
-func wireFormat(t []CollectedTweet) string {
+func twitterCanonicalFormat(t []CollectedTweet) string {
 	var response string
 	for i := 0; i < len(t); i++ {
 		tweet := t[i]
@@ -173,6 +173,6 @@ func (t TwitterCollector) processForDigest(s string) string {
 	if err != nil {
 		log.Error(err)
 	}
-	var response = wireFormat(tweets)
+	var response = twitterCanonicalFormat(tweets)
 	return response
 }

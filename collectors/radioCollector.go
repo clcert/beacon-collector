@@ -72,7 +72,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 	resp, _ := http.Get(streamURL)
 
 	if resp == nil {
-		log.Error("Failed to get Radio event")
+		log.Error("failed to get radio event")
 		return "0", "0"
 	}
 	reader := bufio.NewReader(resp.Body)
@@ -86,7 +86,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 			firstFrame = append(firstFrame, b)
 		}
 		if b != 0xff {
-			log.Error("Invalid sync byte in Radio collector")
+			log.Error("invalid sync byte in radio collector")
 			return "0", "0"
 		}
 		b, _ = reader.ReadByte()
@@ -95,13 +95,13 @@ func (r RadioCollector) collectEvent() (string, string) {
 			firstFrame = append(firstFrame, b)
 		}
 		if (b & 0xf0) != 0xf0 {
-			log.Error("Invalid sync byte in Radio collector")
+			log.Error("invalid sync byte in radio collector")
 			return "0", "0"
 		}
 		frameVersion := (b & 0x08) >> 3
 		if (b&0x06)>>1 != 1 {
 			// Layer is not 3 (0x01)
-			log.Error("Non Layer 3 frame in Radio collector")
+			log.Error("non layer 3 frame in radio collector")
 			return "0", "0"
 		}
 		//frameCRC := false
@@ -116,13 +116,13 @@ func (r RadioCollector) collectEvent() (string, string) {
 		bitrate := b >> 4
 		if bitrate == 0x00 || bitrate == 0x0f {
 			// invalid values
-			log.Error("Invalid bitrate value in Radio collector")
+			log.Error("invalid bitrate value in radio collector")
 			return "0", "0"
 		}
 		frameBitRate := BITRATE[int(frameVersion)][bitrate]
 		sampleRate := (b & 0x0c) >> 2
 		if sampleRate == 0x03 {
-			log.Error("Invalid samplerate value in Radio collector")
+			log.Error("invalid samplerate value in radio collector")
 			return "0", "0"
 		}
 		frameSampleRate := SAMPLERATE[int(frameVersion)][sampleRate]

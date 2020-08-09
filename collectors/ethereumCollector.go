@@ -22,11 +22,12 @@ func (e EthereumCollector) collectEvent() (string, string) {
 	resp, err := http.Post(ethAPI, "application/json", bytes.NewReader(jsonStr))
 
 	if err != nil {
-		log.Error("Failed to get Ethereum event")
+		log.Error("failed to get ethereum event")
 		return "0", "0"
 	}
 
 	if resp.StatusCode != 200 {
+		log.Error("ethereum response error, status code: " + strconv.Itoa(resp.StatusCode))
 		return "0", "0"
 	}
 
@@ -37,7 +38,7 @@ func (e EthereumCollector) collectEvent() (string, string) {
 	blockInfo := make(map[string]map[string]string)
 	_ = json.Unmarshal(response, &blockInfo)
 	if _, ok := blockInfo["error"]; ok {
-		log.Error("Ethereum response with error")
+		log.Error("ethereum response with error")
 		log.Error(blockInfo["error"])
 		return "0", "0"
 	} else {

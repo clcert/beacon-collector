@@ -19,7 +19,7 @@ func getEventsCollectedHashed(timestamp time.Time) []string {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
-		}).Error("Failed to get events collected")
+		}).Error("failed to get events collected")
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -28,7 +28,7 @@ func getEventsCollectedHashed(timestamp time.Time) []string {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"pulseTimestamp": timestamp,
-			}).Error("No events collected for this pulse")
+			}).Error("no events collected for this pulse")
 		}
 		eventsCollectedHashed = append(eventsCollectedHashed, eventCollectedHashed)
 	}
@@ -53,9 +53,8 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
-		}).Error("Failed to add External Events to database")
+		}).Error("failed to add external value to database")
 	}
-
 }
 
 // H(e1 || e2 || ... || en)

@@ -8,7 +8,7 @@ import (
 )
 
 func AggregateEvents() {
-	log.Debug("Collecting Events...")
+	log.Debug("start events collection")
 
 	now := time.Now().UTC()
 	nextRecordTimestamp := now.Add(time.Minute)
@@ -38,7 +38,7 @@ func AggregateEvents() {
 
 	wg.Wait()
 
-	log.Debug("Events Collected!")
+	log.Debug("finish events collection")
 
 	generateExternalValue(getEventsCollectedHashed(nextRecordTimestamp), nextRecordTimestamp)
 }

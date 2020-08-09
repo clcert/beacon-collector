@@ -30,7 +30,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	resp, err := http.Get(prefixURL + "/links/ultimos_sismos.html")
 	// handle the error if there is one
 	if err != nil {
-		log.Error("Failed to get Earthquake event")
+		log.Error("failed to get earthquake event")
 		return "0", "0"
 	}
 	body := resp.Body
@@ -58,7 +58,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	resp, err = http.Get(prefixURL + lastEarthquakeURL)
 	// handle the error if there is one
 	if err != nil {
-		log.Error("Failed to get Earthquake event")
+		log.Error("failed to get earthquake event")
 		return "0", "0"
 	}
 	body = resp.Body
@@ -101,7 +101,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 }
 
 func generateEarthquakeMetadata(eq Earthquake) string {
-	digest := sha3.Sum512([]byte(canonicalFormat(eq)))
+	digest := sha3.Sum512([]byte(EarthquakeCanonicalFormat(eq)))
 	return hex.EncodeToString(digest[:])
 }
 
@@ -150,10 +150,10 @@ func (e EarthquakeCollector) processForDigest(s string) string {
 	if err != nil {
 		log.Error(err)
 	}
-	return canonicalFormat(earthquake)
+	return EarthquakeCanonicalFormat(earthquake)
 }
 
-func canonicalFormat(eq Earthquake) string {
+func EarthquakeCanonicalFormat(eq Earthquake) string {
 	values := []string{eq.ID, eq.UTC, eq.Latitude, eq.Longitude, eq.Depth, eq.Magnitude}
 	return strings.Join(values, ";")
 }
