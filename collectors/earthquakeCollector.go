@@ -31,7 +31,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
-		return "0", "0"
+		return "", ""
 	}
 	body := resp.Body
 	defer body.Close()
@@ -59,7 +59,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
-		return "0", "0"
+		return "", ""
 	}
 	body = resp.Body
 	defer body.Close()
@@ -140,11 +140,10 @@ func (e EarthquakeCollector) estimateEntropy() int {
 	return 0
 }
 
-func (e EarthquakeCollector) processForDigest(s string) string {
-	if s == "0" {
-		return "0"
+func (e EarthquakeCollector) getCanonicalFormat(s string) string {
+	if s == "" {
+		return ""
 	}
-	// add wire-format of values concatenated with ";"
 	var earthquake Earthquake
 	err := json.Unmarshal([]byte(s), &earthquake)
 	if err != nil {

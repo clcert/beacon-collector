@@ -13,7 +13,7 @@ type Collector interface {
 	sourceName() string
 	collectEvent() (string, string)
 	estimateEntropy() int
-	processForDigest(string) string
+	getCanonicalFormat(string) string
 }
 
 type Source struct {
@@ -47,6 +47,6 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 }
 
 func generateDigest(c Collector, s string) string {
-	aux := c.processForDigest(s)
+	aux := c.getCanonicalFormat(s)
 	return fmt.Sprintf("%x", sha3.Sum512([]byte(aux)))
 }

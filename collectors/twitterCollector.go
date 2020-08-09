@@ -102,7 +102,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 
 	if resp.StatusCode != 200 {
 		log.Error("twitter response error, status code: " + strconv.Itoa(resp.StatusCode))
-		return "0", "0"
+		return "", ""
 	}
 
 	tweetReader := bufio.NewReader(resp.Body)
@@ -167,7 +167,7 @@ func (t TwitterCollector) estimateEntropy() int {
 	return 0
 }
 
-func (t TwitterCollector) processForDigest(s string) string {
+func (t TwitterCollector) getCanonicalFormat(s string) string {
 	var tweets []CollectedTweet
 	err := json.Unmarshal([]byte(s), &tweets)
 	if err != nil {

@@ -23,12 +23,12 @@ func (e EthereumCollector) collectEvent() (string, string) {
 
 	if err != nil {
 		log.Error("failed to get ethereum event")
-		return "0", "0"
+		return "", ""
 	}
 
 	if resp.StatusCode != 200 {
 		log.Error("ethereum response error, status code: " + strconv.Itoa(resp.StatusCode))
-		return "0", "0"
+		return "", ""
 	}
 
 	body := resp.Body
@@ -40,7 +40,7 @@ func (e EthereumCollector) collectEvent() (string, string) {
 	if _, ok := blockInfo["error"]; ok {
 		log.Error("ethereum response with error")
 		log.Error(blockInfo["error"])
-		return "0", "0"
+		return "", ""
 	} else {
 		var lastBlockHash string
 		lastBlockNumber := blockInfo["result"]["number"][2:]
@@ -69,6 +69,6 @@ func (e EthereumCollector) estimateEntropy() int {
 	return 0
 }
 
-func (e EthereumCollector) processForDigest(s string) string {
+func (e EthereumCollector) getCanonicalFormat(s string) string {
 	return s
 }
