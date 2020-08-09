@@ -1,8 +1,10 @@
 package collectors
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/sha3"
 	"golang.org/x/net/html"
 	"net/http"
 	"strings"
@@ -92,9 +94,15 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 
 	lastEarthquakeID := getIDFromURL(lastEarthquakeURL)
 	lastEarthquake := createEarthquakeObject(cleanData(content), lastEarthquakeID)
+	lastEarthquakeMetadata := generateEarthquakeMetadata(lastEarthquake)
 	lastEarthquakeAsJSONBytes, _ := json.Marshal(lastEarthquake)
 	lastEarthquakeAsJSONString := string(lastEarthquakeAsJSONBytes)
-	return lastEarthquakeAsJSONString, lastEarthquakeID
+	return lastEarthquakeAsJSONString, lastEarthquakeMetadata
+}
+
+func generateEarthquakeMetadata(eq Earthquake) string {
+	digest := sha3.Sum512([]byte(canonicalFormat(eq)))
+	return hex.EncodeToString(digest[:])
 }
 
 func getIDFromURL(url string) string {
@@ -133,16 +141,19 @@ func (e EarthquakeCollector) estimateEntropy() int {
 }
 
 func (e EarthquakeCollector) processForDigest(s string) string {
+	if s == "0" {
+		return "0"
+	}
 	// add wire-format of values concatenated with ";"
 	var earthquake Earthquake
 	err := json.Unmarshal([]byte(s), &earthquake)
 	if err != nil {
 		log.Error(err)
 	}
-	return wireFormatEarthquake(earthquake)
+	return canonicalFormat(earthquake)
 }
 
-func wireFormatEarthquake(e Earthquake) string {
-	var response = e.ID + ";" + e.UTC + ";" + e.Latitude + ";" + e.Longitude + ";" + e.Depth + ";" + e.Magnitude
-	return response
+func canonicalFormat(eq Earthquake) string {
+	values := []string{eq.ID, eq.UTC, eq.Latitude, eq.Longitude, eq.Depth, eq.Magnitude}
+	return strings.Join(values, ";")
 }
