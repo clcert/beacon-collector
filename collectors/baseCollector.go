@@ -5,6 +5,7 @@ import (
 	"github.com/clcert/beacon-collector-go/db"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
+	"strings"
 	"sync"
 	"time"
 )
@@ -48,5 +49,8 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 
 func generateDigest(c Collector, s string) string {
 	aux := c.getCanonicalFormat(s)
+	if aux == "" {
+		return strings.Repeat("0", 128)
+	}
 	return fmt.Sprintf("%x", sha3.Sum512([]byte(aux)))
 }
