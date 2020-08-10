@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -17,18 +18,62 @@ func (e EthereumCollector) sourceName() string {
 }
 
 func (e EthereumCollector) collectEvent() (string, string) {
-	ethAPI := "https://eth.labs.clcert.cl"
+	sources := []string{"localNode", "infura", "etherscan", "rivet"}
+	for _, source := range sources {
+		blockHash, blockNumber, valid := getLastBlock(source)
+		if valid {
+			log.WithFields(log.Fields{
+				"ethSource": source,
+			}).Debug("complete ethereum event")
+			return blockHash, blockNumber
+		}
+	}
+	return "", ""
+}
+
+func getEthToken(source string) string {
+	configJsonFile, err := os.Open("collectors/ethereumConfig.json")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer configJsonFile.Close()
+	ethTokens := make(map[string]string)
+	byteValue, _ := ioutil.ReadAll(configJsonFile)
+	json.Unmarshal(byteValue, &ethTokens)
+
+	return ethTokens[source]
+}
+
+func getLastBlock(source string) (string, string, bool) {
+	var ethAPI string
+	switch source {
+	case "localNode":
+		ethAPI = "https://eth.labs.clcert.cl%s"
+	case "infura":
+		ethAPI = "https://mainnet.infura.io/v3/%s"
+	case "etherscan":
+		ethAPI = "https://api.etherscan.io/api?module=proxy&action=eth_getBlockByNumber&tag=latest&boolean=false&apikey=%s"
+	case "rivet":
+		ethAPI = "https://%s.eth.rpc.rivet.cloud/"
+	default:
+		ethAPI = ""
+	}
+
 	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["latest", false]}`)
-	resp, err := http.Post(ethAPI, "application/json", bytes.NewReader(jsonStr))
+	resp, err := http.Post(fmt.Sprintf(ethAPI, getEthToken(source)), "application/json", bytes.NewReader(jsonStr))
 
 	if err != nil {
-		log.Error("failed to get ethereum event")
-		return "", ""
+		log.WithFields(log.Fields{
+			"ethSource": source,
+		}).Error("failed to get ethereum event")
+		return "", "", false
 	}
 
 	if resp.StatusCode != 200 {
-		log.Error("ethereum response error, status code: " + strconv.Itoa(resp.StatusCode))
-		return "", ""
+		log.WithFields(log.Fields{
+			"ethSource": source,
+		}).Error("ethereum response error, status code: " + strconv.Itoa(resp.StatusCode))
+		return "", "", false
 	}
 
 	body := resp.Body
@@ -38,9 +83,11 @@ func (e EthereumCollector) collectEvent() (string, string) {
 	blockInfo := make(map[string]map[string]string)
 	_ = json.Unmarshal(response, &blockInfo)
 	if _, ok := blockInfo["error"]; ok {
-		log.Error("ethereum response with error")
+		log.WithFields(log.Fields{
+			"ethSource": source,
+		}).Error("ethereum response with error")
 		log.Error(blockInfo["error"])
-		return "", ""
+		return "", "", false
 	} else {
 		var lastBlockHash string
 		lastBlockNumber := blockInfo["result"]["number"][2:]
@@ -50,7 +97,7 @@ func (e EthereumCollector) collectEvent() (string, string) {
 			lastBlockHash = blockInfo["result"]["parentHash"][2:]
 			lastBlockNumber = subtractOne(lastBlockNumber)
 		}
-		return lastBlockHash, lastBlockNumber
+		return lastBlockHash, lastBlockNumber, true
 	}
 }
 
