@@ -1,6 +1,6 @@
 {
   "localNode": "",
-  "infura": "",
-  "etherscan": "",
-  "rivet": ""
+  "infura": "INFURA_TOKEN",
+  "etherscan": "ETHERSCAN_TOKEN",
+  "rivet": "RIVET_TOKEN"
 }
