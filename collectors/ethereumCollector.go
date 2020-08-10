@@ -114,6 +114,6 @@ func (e EthereumCollector) estimateEntropy() int {
 	return 0
 }
 
-func (e EthereumCollector) getCanonicalFormat(s string) string {
+func (e EthereumCollector) getCanonicalForm(s string) string {
 	return s
 }

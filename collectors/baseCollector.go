@@ -14,7 +14,7 @@ type Collector interface {
 	sourceName() string
 	collectEvent() (string, string)
 	estimateEntropy() int
-	getCanonicalFormat(string) string
+	getCanonicalForm(string) string
 }
 
 type Source struct {
@@ -30,7 +30,8 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 
 	data, metadata := c.collectEvent()
 
-	digest := generateDigest(c, data)
+	canonical := c.getCanonicalForm(data)
+	digest := generateDigest(canonical)
 	sourceName := c.sourceName()
 	estimatedEntropy := c.estimateEntropy()
 
@@ -47,10 +48,9 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	log.Debugf("complete %s collection", c.sourceName())
 }
 
-func generateDigest(c Collector, s string) string {
-	aux := c.getCanonicalFormat(s)
-	if aux == "" {
+func generateDigest(canonical string) string {
+	if canonical == "" {
 		return strings.Repeat("0", 128)
 	}
-	return fmt.Sprintf("%x", sha3.Sum512([]byte(aux)))
+	return fmt.Sprintf("%x", sha3.Sum512([]byte(canonical)))
 }

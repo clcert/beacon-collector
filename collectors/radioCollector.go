@@ -170,6 +170,6 @@ func (r RadioCollector) estimateEntropy() int {
 	return 0
 }
 
-func (r RadioCollector) getCanonicalFormat(s string) string {
+func (r RadioCollector) getCanonicalForm(s string) string {
 	return s
 }

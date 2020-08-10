@@ -101,7 +101,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 }
 
 func generateEarthquakeMetadata(eq Earthquake) string {
-	digest := sha3.Sum512([]byte(EarthquakeCanonicalFormat(eq)))
+	digest := sha3.Sum512([]byte(EarthquakeCanonicalForm(eq)))
 	return hex.EncodeToString(digest[:])
 }
 
@@ -140,7 +140,7 @@ func (e EarthquakeCollector) estimateEntropy() int {
 	return 0
 }
 
-func (e EarthquakeCollector) getCanonicalFormat(s string) string {
+func (e EarthquakeCollector) getCanonicalForm(s string) string {
 	if s == "" {
 		return ""
 	}
@@ -149,10 +149,10 @@ func (e EarthquakeCollector) getCanonicalFormat(s string) string {
 	if err != nil {
 		log.Error(err)
 	}
-	return EarthquakeCanonicalFormat(earthquake)
+	return EarthquakeCanonicalForm(earthquake)
 }
 
-func EarthquakeCanonicalFormat(eq Earthquake) string {
+func EarthquakeCanonicalForm(eq Earthquake) string {
 	values := []string{eq.ID, eq.UTC, eq.Latitude, eq.Longitude, eq.Depth, eq.Magnitude}
 	return strings.Join(values, ";")
 }

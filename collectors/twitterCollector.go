@@ -137,7 +137,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	return tweetsAsJSONString, firstTimestamp
 }
 
-func twitterCanonicalFormat(t []CollectedTweet) string {
+func twitterCanonicalForm(t []CollectedTweet) string {
 	var response string
 	for i := 0; i < len(t); i++ {
 		tweet := t[i]
@@ -167,12 +167,12 @@ func (t TwitterCollector) estimateEntropy() int {
 	return 0
 }
 
-func (t TwitterCollector) getCanonicalFormat(s string) string {
+func (t TwitterCollector) getCanonicalForm(s string) string {
 	var tweets []CollectedTweet
 	err := json.Unmarshal([]byte(s), &tweets)
 	if err != nil {
 		log.Error(err)
 	}
-	var response = twitterCanonicalFormat(tweets)
+	var response = twitterCanonicalForm(tweets)
 	return response
 }
