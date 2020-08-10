@@ -22,12 +22,10 @@ func (e EthereumCollector) collectEvent() (string, string) {
 	for _, source := range sources {
 		blockHash, blockNumber, valid := getLastBlock(source)
 		if valid {
-			log.WithFields(log.Fields{
-				"ethSource": source,
-			}).Debug("complete ethereum event")
 			return blockHash, blockNumber
 		}
 	}
+	log.Error("no ethereum source available")
 	return "", ""
 }
 
