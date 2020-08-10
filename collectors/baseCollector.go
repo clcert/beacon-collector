@@ -35,15 +35,15 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	sourceName := c.sourceName()
 	estimatedEntropy := c.estimateEntropy()
 
-	addEventStatement := `INSERT INTO events_collected (source_name, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp) 
-						  VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	_, err := dbConn.Exec(addEventStatement, sourceName, data, metadata, estimatedEntropy, digest, 0, recordTimestamp)
+	addEventStatement := `INSERT INTO events (source_name, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp, canonical_form) 
+						  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	_, err := dbConn.Exec(addEventStatement, sourceName, data, metadata, estimatedEntropy, digest, 0, recordTimestamp, canonical)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceName":     sourceName,
 		}).Error("failed to add event to database")
-		panic(err)
+		log.Error(err)
 	}
 	log.Debugf("complete %s collection", c.sourceName())
 }

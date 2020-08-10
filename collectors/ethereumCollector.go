@@ -88,6 +88,12 @@ func getLastBlock(source string) (string, string, bool) {
 		return "", "", false
 	} else {
 		var lastBlockHash string
+		if blockInfo["result"] == nil {
+			log.WithFields(log.Fields{
+				"ethSource": source,
+			}).Error("empty ethereum response")
+			return "", "", false
+		}
 		lastBlockNumber := blockInfo["result"]["number"][2:]
 		if isEven(lastBlockNumber) {
 			lastBlockHash = blockInfo["result"]["hash"][2:]

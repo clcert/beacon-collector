@@ -14,7 +14,7 @@ func getEventsCollectedHashed(timestamp time.Time) []string {
 
 	var eventsCollectedHashed []string
 
-	getEventsCollectedHashedStatement := `SELECT digest FROM events_collected WHERE pulse_timestamp = $1`
+	getEventsCollectedHashedStatement := `SELECT digest FROM events WHERE pulse_timestamp = $1`
 	rows, err := dbConn.Query(getEventsCollectedHashedStatement, timestamp)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -47,7 +47,7 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	hashedEvents := hashEvents(eventsCollected)
 	externalEvent := vdf(hashedEvents)
-	addEventStatement := `INSERT INTO external_events (value, pulse_timestamp, status_collected) VALUES ($1, $2, $3)`
+	addEventStatement := `INSERT INTO external_values (value, pulse_timestamp, status) VALUES ($1, $2, $3)`
 
 	_, err := db.Exec(addEventStatement, hex.EncodeToString(externalEvent[:]), timestamp, 0)
 	if err != nil {
