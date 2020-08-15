@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/net/html"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -31,6 +32,10 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
+		return "", ""
+	}
+	if resp.StatusCode != 200 {
+		log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
 		return "", ""
 	}
 	body := resp.Body
@@ -59,6 +64,10 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
+		return "", ""
+	}
+	if resp.StatusCode != 200 {
+		log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
 		return "", ""
 	}
 	body = resp.Body

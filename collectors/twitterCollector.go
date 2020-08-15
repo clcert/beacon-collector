@@ -84,6 +84,7 @@ func getTwitterCredentials() map[string]string {
 }
 
 func (t TwitterCollector) collectEvent() (string, string) {
+	currentMinute := time.Now().UTC().Minute()
 	startSecondMark := 5
 	extractingDuration := 10
 
@@ -111,11 +112,10 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	s := bufio.NewScanner(tweetReader)
 	heap.Init(tweets)
 	for s.Scan() {
-		// tweetLine, _ := tweetReader.ReadBytes('\n')
 		collectedTweet := map[string]CollectedTweet{"data": {}}
 		_ = json.Unmarshal(s.Bytes(), &collectedTweet)
 		collectedTweetCreatedAt, _ := time.Parse(time.RFC3339, collectedTweet["data"].CreatedAt)
-		if startSecondMark <= collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() <= (startSecondMark+extractingDuration) {
+		if currentMinute == collectedTweetCreatedAt.Minute() && startSecondMark <= collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() <= (startSecondMark+extractingDuration) {
 			heap.Push(tweets, collectedTweet["data"])
 		}
 		if collectedTweetCreatedAt.Second() == (startSecondMark+extractingDuration)+5 {
