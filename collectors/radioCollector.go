@@ -67,13 +67,13 @@ var BITRATE = map[int]map[byte]int{
 	},
 }
 
-func (r RadioCollector) collectEvent() (string, string) {
+func (r RadioCollector) collectEvent() (string, string, int) {
 	streamURL := "http://200.89.71.21:8000/;"
 	resp, _ := http.Get(streamURL)
 
 	if resp == nil {
 		log.Error("failed to get radio event")
-		return "", ""
+		return "", "", 2
 	}
 	reader := bufio.NewReader(resp.Body)
 	var firstFrame []byte
@@ -87,7 +87,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 		}
 		if b != 0xff {
 			log.Error("invalid sync byte in radio collector")
-			return "", ""
+			return "", "", 2
 		}
 		b, _ = reader.ReadByte()
 		audioBytes = append(audioBytes, b)
@@ -96,13 +96,13 @@ func (r RadioCollector) collectEvent() (string, string) {
 		}
 		if (b & 0xf0) != 0xf0 {
 			log.Error("invalid sync byte in radio collector")
-			return "", ""
+			return "", "", 2
 		}
 		frameVersion := (b & 0x08) >> 3
 		if (b&0x06)>>1 != 1 {
 			// Layer is not 3 (0x01)
 			log.Error("non layer 3 frame in radio collector")
-			return "", ""
+			return "", "", 2
 		}
 		//frameCRC := false
 		//if (b & 0x01) == 0x01 {
@@ -117,13 +117,13 @@ func (r RadioCollector) collectEvent() (string, string) {
 		if bitrate == 0x00 || bitrate == 0x0f {
 			// invalid values
 			log.Error("invalid bitrate value in radio collector")
-			return "", ""
+			return "", "", 2
 		}
 		frameBitRate := BITRATE[int(frameVersion)][bitrate]
 		sampleRate := (b & 0x0c) >> 2
 		if sampleRate == 0x03 {
 			log.Error("invalid samplerate value in radio collector")
-			return "", ""
+			return "", "", 2
 		}
 		frameSampleRate := SAMPLERATE[int(frameVersion)][sampleRate]
 		padding := (b & 0x02) >> 1
@@ -163,7 +163,7 @@ func (r RadioCollector) collectEvent() (string, string) {
 	// fileMP3.Write(audioBytes)
 	firstFrameHashedHex := fmt.Sprintf("%x", sha3.Sum512(firstFrame))
 	audioHex := hex.EncodeToString(audioBytes)
-	return audioHex, firstFrameHashedHex
+	return audioHex, firstFrameHashedHex, 0
 }
 
 func (r RadioCollector) estimateEntropy() int {

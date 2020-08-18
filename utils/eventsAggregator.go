@@ -36,6 +36,9 @@ func AggregateEvents() {
 	wg.Add(1)
 	go collectors.Process(ethCollector, nextRecordTimestamp, &wg)
 
+	// wg.Add(1)
+	// go CleanOldEvents(&wg)
+
 	wg.Wait()
 
 	log.Debug("finish events collection")

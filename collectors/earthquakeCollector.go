@@ -26,17 +26,17 @@ func (e EarthquakeCollector) sourceName() string {
 	return "earthquake"
 }
 
-func (e EarthquakeCollector) collectEvent() (string, string) {
+func (e EarthquakeCollector) collectEvent() (string, string, int) {
 	prefixURL := "http://www.sismologia.cl"
 	resp, err := http.Get(prefixURL + "/links/ultimos_sismos.html")
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
-		return "", ""
+		return "", "", 2
 	}
 	if resp.StatusCode != 200 {
 		log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
-		return "", ""
+		return "", "", 2
 	}
 	body := resp.Body
 	defer body.Close()
@@ -64,11 +64,11 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
-		return "", ""
+		return "", "", 2
 	}
 	if resp.StatusCode != 200 {
 		log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
-		return "", ""
+		return "", "", 2
 	}
 	body = resp.Body
 	defer body.Close()
@@ -106,7 +106,7 @@ func (e EarthquakeCollector) collectEvent() (string, string) {
 	lastEarthquakeMetadata := generateEarthquakeMetadata(lastEarthquake)
 	lastEarthquakeAsJSONBytes, _ := json.Marshal(lastEarthquake)
 	lastEarthquakeAsJSONString := string(lastEarthquakeAsJSONBytes)
-	return lastEarthquakeAsJSONString, lastEarthquakeMetadata
+	return lastEarthquakeAsJSONString, lastEarthquakeMetadata, 0
 }
 
 func generateEarthquakeMetadata(eq Earthquake) string {

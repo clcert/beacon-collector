@@ -83,7 +83,7 @@ func getTwitterCredentials() map[string]string {
 	return twitterCredentials
 }
 
-func (t TwitterCollector) collectEvent() (string, string) {
+func (t TwitterCollector) collectEvent() (string, string, int) {
 	currentMinute := time.Now().UTC().Minute()
 	startSecondMark := 5
 	extractingDuration := 10
@@ -103,7 +103,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 
 	if resp.StatusCode != 200 {
 		log.Error("twitter response error, status code: " + strconv.Itoa(resp.StatusCode))
-		return "", ""
+		return "", "", 2
 	}
 
 	tweetReader := bufio.NewReader(resp.Body)
@@ -134,7 +134,7 @@ func (t TwitterCollector) collectEvent() (string, string) {
 	tweetsAsJSONBytes, _ := json.Marshal(tweetsResponse)
 	tweetsAsJSONString := string(tweetsAsJSONBytes)
 
-	return tweetsAsJSONString, firstTimestamp
+	return tweetsAsJSONString, firstTimestamp, 0
 }
 
 func twitterCanonicalForm(t []CollectedTweet) string {

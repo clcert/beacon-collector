@@ -17,16 +17,20 @@ func (e EthereumCollector) sourceName() string {
 	return "ethereum"
 }
 
-func (e EthereumCollector) collectEvent() (string, string) {
+func (e EthereumCollector) collectEvent() (string, string, int) {
+	var status = 0
 	sources := []string{"localNode", "infura", "etherscan", "rivet"}
 	for _, source := range sources {
 		blockHash, blockNumber, valid := getLastBlock(source)
 		if valid {
-			return blockHash, blockNumber
+			if source != "localNode" {
+				status = status | 8
+			}
+			return blockHash, blockNumber, status
 		}
 	}
 	log.Error("no ethereum source available")
-	return "", ""
+	return "", "", 2
 }
 
 func getEthToken(source string) string {
