@@ -3,8 +3,10 @@ package utils
 import (
 	"encoding/hex"
 	"github.com/clcert/beacon-collector-go/db"
+	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
+	"sync"
 	"time"
 )
 
@@ -69,4 +71,53 @@ func hashEvents(events []string) [64]byte {
 
 func vdf(events [64]byte) [64]byte {
 	return sha3.Sum512(events[:])
+}
+
+type EventSimplified struct {
+	Id             int       `json:"id"`
+	PulseTimestamp time.Time `json:"pulseTimestamp"`
+}
+
+func CleanOldEvents(wg *sync.WaitGroup) {
+	defer wg.Done()
+	// Clean old events that don't fulfill the following requirements:
+	// 1. are less than X hour old
+	// 2. his output value is not present in previous_hour, previous_day, previous_month or previous_year of any pulse
+	dbConn := db.ConnectDB()
+	defer dbConn.Close()
+
+	now := time.Now().UTC()
+	limitTimestamp := now.Add(-time.Hour)
+
+	var defaultMessage = "delete"
+	// getPossiblesStatement := `SELECT id, pulse_timestamp FROM events WHERE digest != $1 AND pulse_timestamp < $2`
+	getPossiblesStatement := `SELECT id, pulse_timestamp FROM events WHERE digest != $1 AND pulse_timestamp < $2 AND (event_status & 1) != 1`
+	rows, err := dbConn.Query(getPossiblesStatement, defaultMessage, limitTimestamp)
+	if err != nil {
+		// something
+		panic(err)
+	}
+	var allPossibleEvents []EventSimplified
+	defer rows.Close()
+	for rows.Next() {
+		var possibleEventToDelete EventSimplified
+		err = rows.Scan(&possibleEventToDelete.Id, &possibleEventToDelete.PulseTimestamp)
+		if err != nil {
+			panic(err)
+		}
+		allPossibleEvents = append(allPossibleEvents, possibleEventToDelete)
+	}
+	var eventsIDToDelete []int
+	for _, event := range allPossibleEvents {
+		if event.PulseTimestamp.Minute() != 0 {
+			eventsIDToDelete = append(eventsIDToDelete, event.Id)
+		}
+	}
+
+	deleteRawStatement := `UPDATE events SET raw_event = $1, canonical_form = $1 WHERE id = ANY($2)`
+	_, err = dbConn.Exec(deleteRawStatement, defaultMessage, pq.Array(eventsIDToDelete))
+	if err != nil {
+		panic(err)
+	}
+
 }
