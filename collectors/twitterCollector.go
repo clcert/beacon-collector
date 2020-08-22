@@ -93,7 +93,8 @@ func (t TwitterCollector) collectEvent() (string, string, int) {
 	var consumerSecret = twitterCredentials["consumer_secret"]
 	bearerToken := getBearerToken(consumerKey, consumerSecret)
 
-	var streamURL = "https://api.twitter.com/labs/1/tweets/stream/sample"
+	// var streamURL = "https://api.twitter.com/labs/1/tweets/stream/sample"
+	var streamURL = "https://api.twitter.com/2/tweets/sample/stream?tweet.fields=created_at&expansions=author_id"
 
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", streamURL, nil)
@@ -168,6 +169,9 @@ func (t TwitterCollector) estimateEntropy() int {
 }
 
 func (t TwitterCollector) getCanonicalForm(s string) string {
+	if s == "" {
+		return ""
+	}
 	var tweets []CollectedTweet
 	err := json.Unmarshal([]byte(s), &tweets)
 	if err != nil {
