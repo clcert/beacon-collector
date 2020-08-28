@@ -42,7 +42,7 @@ func (e EarthquakeCollector) collectEvent() (string, string, int) {
 	defer body.Close()
 
 	// Get last earthquake URL
-	var lastEarthquakeURL string
+	var lastEarthquakesURL []string
 	z := html.NewTokenizer(body)
 	for z.Token().Data != "html" {
 		var tt = z.Next()
@@ -51,24 +51,29 @@ func (e EarthquakeCollector) collectEvent() (string, string, int) {
 			if t.Data == "a" {
 				for _, a := range t.Attr {
 					if a.Key == "href" {
-						lastEarthquakeURL = a.Val
+						lastEarthquakesURL = append(lastEarthquakesURL, a.Val)
 						break
 					}
 				}
-				break
 			}
 		}
 	}
 
-	resp, err = http.Get(prefixURL + lastEarthquakeURL)
-	// handle the error if there is one
-	if err != nil {
-		log.Error("failed to get earthquake event")
-		return "", "", 2
-	}
-	if resp.StatusCode != 200 {
-		log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
-		return "", "", 2
+	var lastEarthquakeURL string
+	var status = 0
+	for _, v := range lastEarthquakesURL {
+		resp, err = http.Get(prefixURL + v)
+		if err != nil {
+			log.Error("failed to get earthquake event")
+			return "", "", 2
+		}
+		if resp.StatusCode != 200 {
+			log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
+			status = 8
+		} else {
+			lastEarthquakeURL = v
+			break
+		}
 	}
 	body = resp.Body
 	defer body.Close()
@@ -106,7 +111,7 @@ func (e EarthquakeCollector) collectEvent() (string, string, int) {
 	lastEarthquakeMetadata := generateEarthquakeMetadata(lastEarthquake)
 	lastEarthquakeAsJSONBytes, _ := json.Marshal(lastEarthquake)
 	lastEarthquakeAsJSONString := string(lastEarthquakeAsJSONBytes)
-	return lastEarthquakeAsJSONString, lastEarthquakeMetadata, 0
+	return lastEarthquakeAsJSONString, lastEarthquakeMetadata, status
 }
 
 func generateEarthquakeMetadata(eq Earthquake) string {
