@@ -30,7 +30,7 @@ func AggregateEvents() {
 
 	var radioCollector collectors.RadioCollector
 	wg.Add(1)
-	collectors.Process(radioCollector, nextRecordTimestamp, &wg)
+	go collectors.Process(radioCollector, nextRecordTimestamp, &wg)
 
 	var ethCollector collectors.EthereumCollector
 	wg.Add(1)

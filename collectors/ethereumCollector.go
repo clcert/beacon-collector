@@ -99,7 +99,7 @@ func getLastBlock(source string) (string, string, bool) {
 			return "", "", false
 		}
 		lastBlockNumber := blockInfo["result"]["number"][2:]
-		if isEven(lastBlockNumber) {
+		if isValid(lastBlockNumber) {
 			lastBlockHash = blockInfo["result"]["hash"][2:]
 		} else {
 			lastBlockHash = blockInfo["result"]["parentHash"][2:]
@@ -109,9 +109,9 @@ func getLastBlock(source string) (string, string, bool) {
 	}
 }
 
-func isEven(hexNumber string) bool {
+func isValid(hexNumber string) bool {
 	num, _ := strconv.ParseInt(hexNumber, 16, 64)
-	return num%2 == 0
+	return num%3 == 0
 }
 
 func subtractOne(hexNumber string) string {
