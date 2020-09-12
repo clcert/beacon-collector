@@ -21,7 +21,7 @@ func (e EthereumCollector) collectEvent() (string, string, int) {
 	var status = 0
 	sources := []string{"localNode", "infura", "etherscan", "rivet"}
 	for _, source := range sources {
-		blockHash, blockNumber, valid := getLastBlock(source)
+		blockHash, blockNumber, valid := getBlock("latest", source)
 		if valid {
 			if source != "localNode" {
 				status = status | 8
@@ -46,7 +46,18 @@ func getEthToken(source string) string {
 	return ethTokens[source]
 }
 
-func getLastBlock(source string) (string, string, bool) {
+func isValid(hexNumber string) int64 {
+	num, _ := strconv.ParseInt(hexNumber, 16, 64)
+	return num % 3
+}
+
+func subtractOne(hexNumber string) string {
+	num, _ := strconv.ParseInt(hexNumber, 16, 64)
+	output := num - 1
+	return fmt.Sprintf("%x", output)
+}
+
+func getBlock(blockType string, source string) (string, string, bool) {
 	var ethAPI string
 	switch source {
 	case "localNode":
@@ -61,7 +72,7 @@ func getLastBlock(source string) (string, string, bool) {
 		ethAPI = ""
 	}
 
-	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["latest", false]}`)
+	jsonStr := []byte(`{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "id": "1", "params": ["` + blockType + `", false]}`)
 	resp, err := http.Post(fmt.Sprintf(ethAPI, getEthToken(source)), "application/json", bytes.NewReader(jsonStr))
 
 	if err != nil {
@@ -99,25 +110,23 @@ func getLastBlock(source string) (string, string, bool) {
 			return "", "", false
 		}
 		lastBlockNumber := blockInfo["result"]["number"][2:]
-		if isValid(lastBlockNumber) {
+		blockNumberMod := isValid(lastBlockNumber)
+		if blockNumberMod == 0 {
+			log.Debug("block 0 mod 3")
 			lastBlockHash = blockInfo["result"]["hash"][2:]
+			return lastBlockHash, lastBlockNumber, true
+		} else if blockNumberMod == 1 {
+			log.Debug("block 1 mod 3")
+			parentBlockHash := blockInfo["result"]["parentHash"][2:]
+			parentBlockNumber := subtractOne(lastBlockNumber)
+			return parentBlockHash, parentBlockNumber, true
 		} else {
-			lastBlockHash = blockInfo["result"]["parentHash"][2:]
-			lastBlockNumber = subtractOne(lastBlockNumber)
+			log.Debug("block 2 mod 3")
+			greatParentBlockNumber := subtractOne(subtractOne(lastBlockNumber))
+			greatParentBlockHash, _, _ := getBlock("0x"+greatParentBlockNumber, source)
+			return greatParentBlockHash, greatParentBlockNumber, true
 		}
-		return lastBlockHash, lastBlockNumber, true
 	}
-}
-
-func isValid(hexNumber string) bool {
-	num, _ := strconv.ParseInt(hexNumber, 16, 64)
-	return num%3 == 0
-}
-
-func subtractOne(hexNumber string) string {
-	num, _ := strconv.ParseInt(hexNumber, 16, 64)
-	output := num - 1
-	return fmt.Sprintf("%x", output)
 }
 
 func (e EthereumCollector) estimateEntropy() int {

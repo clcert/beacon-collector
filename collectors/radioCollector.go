@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"net/http"
+	"strconv"
 )
 
 type RadioCollector struct{}
@@ -150,7 +151,8 @@ func (r RadioCollector) collectEvent() (string, string, int) {
 		// check first frame hash property (first byte equals 0)
 		if frameNumber == 0 {
 			firstFrameHashedHex := fmt.Sprintf("%x", sha3.Sum512(firstFrame))
-			if firstFrameHashedHex[0:2] != "00" {
+			thirdHexDigit, err := strconv.Atoi(firstFrameHashedHex[2:3])
+			if firstFrameHashedHex[0:2] != "00" || thirdHexDigit > 7 || err != nil {
 				invalidCounter += 1
 				frameNumber -= 1
 				firstFrame = []byte{}
