@@ -65,7 +65,7 @@ func getBlock(blockType string, source string) (string, string, bool) {
 	case "infura":
 		ethAPI = "https://mainnet.infura.io/v3/%s"
 	case "etherscan":
-		ethAPI = "https://api.etherscan.io/api?module=proxy&action=eth_getBlockByNumber&tag=latest&boolean=false&apikey=%s"
+		ethAPI = "https://api.etherscan.io/api?module=proxy&action=eth_getBlockByNumber&tag=" + blockType + "&boolean=false&apikey=%s"
 	case "rivet":
 		ethAPI = "https://%s.eth.rpc.rivet.cloud/"
 	default:
@@ -112,19 +112,20 @@ func getBlock(blockType string, source string) (string, string, bool) {
 		lastBlockNumber := blockInfo["result"]["number"][2:]
 		blockNumberMod := isValid(lastBlockNumber)
 		if blockNumberMod == 0 {
-			log.Debug("block 0 mod 3")
 			lastBlockHash = blockInfo["result"]["hash"][2:]
 			return lastBlockHash, lastBlockNumber, true
 		} else if blockNumberMod == 1 {
-			log.Debug("block 1 mod 3")
 			parentBlockHash := blockInfo["result"]["parentHash"][2:]
 			parentBlockNumber := subtractOne(lastBlockNumber)
 			return parentBlockHash, parentBlockNumber, true
 		} else {
-			log.Debug("block 2 mod 3")
 			greatParentBlockNumber := subtractOne(subtractOne(lastBlockNumber))
-			greatParentBlockHash, _, _ := getBlock("0x"+greatParentBlockNumber, source)
-			return greatParentBlockHash, greatParentBlockNumber, true
+			greatParentBlockHash, _, answered := getBlock("0x"+greatParentBlockNumber, source)
+			if answered {
+				return greatParentBlockHash, greatParentBlockNumber, true
+			} else {
+				return "", "", false
+			}
 		}
 	}
 }
