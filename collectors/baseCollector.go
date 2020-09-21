@@ -13,7 +13,7 @@ import (
 
 type Collector interface {
 	sourceName() string
-	collectEvent() (string, string, int)
+	collectEvent(chan Event)
 	estimateEntropy() int
 	getCanonicalForm(string) string
 }
@@ -23,13 +23,54 @@ type Source struct {
 	Id   int    `json:"id"`
 }
 
+type Event struct {
+	Data             string
+	Metadata         string
+	StatusCollection int
+}
+
 func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	dbConn := db.ConnectDB()
 	defer dbConn.Close()
 
-	data, metadata, statusCollection := c.collectEvent()
+	ch1 := make(chan Event)
+	go c.collectEvent(ch1)
+
+	select {
+	case collectionResult := <-ch1:
+		saveCollectionInDatabase(c, dbConn, recordTimestamp, collectionResult.Data, collectionResult.Metadata, collectionResult.StatusCollection)
+	case <-time.After(31 * time.Second):
+		log.WithFields(log.Fields{
+			"pulseTimestamp": recordTimestamp,
+			"sourceName":     c.sourceName(),
+		}).Error("timeout")
+		saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", 2)
+	}
+
+	// data, metadata, statusCollection := c.collectEvent()
+	//status := comparePrevious(metadata, statusCollection, c)
+	//
+	//canonical := c.getCanonicalForm(data)
+	//digest := generateDigest(canonical)
+	//sourceName := c.sourceName()
+	//estimatedEntropy := c.estimateEntropy()
+	//
+	//addEventStatement := `INSERT INTO events (source_name, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp, canonical_form)
+	//					  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	//_, err := dbConn.Exec(addEventStatement, sourceName, data, metadata, estimatedEntropy, digest, status, recordTimestamp, canonical)
+	//if err != nil {
+	//	log.WithFields(log.Fields{
+	//		"pulseTimestamp": recordTimestamp,
+	//		"sourceName":     sourceName,
+	//	}).Error("failed to add event to database")
+	//	log.Error(err)
+	//}
+	//log.Debugf("complete %s collection", c.sourceName())
+}
+
+func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.Time, data string, metadata string, statusCollection int) {
 	status := comparePrevious(metadata, statusCollection, c)
 
 	canonical := c.getCanonicalForm(data)
