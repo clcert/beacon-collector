@@ -35,13 +35,13 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	dbConn := db.ConnectDB()
 	defer dbConn.Close()
 
-	ch1 := make(chan Event)
+	ch1 := make(chan Event, 1)
 	go c.collectEvent(ch1)
 
 	select {
 	case collectionResult := <-ch1:
 		saveCollectionInDatabase(c, dbConn, recordTimestamp, collectionResult.Data, collectionResult.Metadata, collectionResult.StatusCollection)
-	case <-time.After(31 * time.Second):
+	case <-time.After(30 * time.Second):
 		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceName":     c.sourceName(),

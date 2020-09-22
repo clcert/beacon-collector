@@ -84,16 +84,19 @@ func getTwitterCredentials() map[string]string {
 }
 
 func (t TwitterCollector) collectEvent(ch chan Event) {
-	currentMinute := time.Now().UTC().Minute()
-	startSecondMark := 5
-	extractingDuration := 10
+	// currentMinute := time.Now().UTC().Minute()
+	currentTimestamp := time.Now().UTC()
+	const startSecondMark = 5
+	const extractingDuration = 10
+	const waitingAfter = 3
+	startLimitTimestamp := time.Date(currentTimestamp.Year(), currentTimestamp.Month(), currentTimestamp.Day(), currentTimestamp.Hour(), currentTimestamp.Minute(), startSecondMark, 0, currentTimestamp.Location())
+	endLimitTimestamp := startLimitTimestamp.Add(extractingDuration * time.Second)
 
 	twitterCredentials := getTwitterCredentials()
 	var consumerKey = twitterCredentials["consumer_key"]
 	var consumerSecret = twitterCredentials["consumer_secret"]
 	bearerToken := getBearerToken(consumerKey, consumerSecret)
 
-	// var streamURL = "https://api.twitter.com/labs/1/tweets/stream/sample"
 	var streamURL = "https://api.twitter.com/2/tweets/sample/stream?tweet.fields=created_at&expansions=author_id"
 
 	client := &http.Client{}
@@ -114,16 +117,33 @@ func (t TwitterCollector) collectEvent(ch chan Event) {
 	tweets := &TweetsHeap{}
 	s := bufio.NewScanner(tweetReader)
 	heap.Init(tweets)
+	//aux := false
 	for s.Scan() {
 		collectedTweet := map[string]CollectedTweet{"data": {}}
 		_ = json.Unmarshal(s.Bytes(), &collectedTweet)
 		collectedTweetCreatedAt, _ := time.Parse(time.RFC3339, collectedTweet["data"].CreatedAt)
-		if currentMinute == collectedTweetCreatedAt.Minute() && startSecondMark <= collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() <= (startSecondMark+extractingDuration) {
+		if collectedTweetCreatedAt.Equal(startLimitTimestamp) || (collectedTweetCreatedAt.After(startLimitTimestamp) && collectedTweetCreatedAt.Before(endLimitTimestamp)) || collectedTweetCreatedAt.Equal(endLimitTimestamp) {
 			heap.Push(tweets, collectedTweet["data"])
 		}
-		if collectedTweetCreatedAt.Second() == (startSecondMark+extractingDuration)+5 {
+		//
+		//if collectedTweetCreatedAt.After(endLimitTimestamp) {
+		//	aux = true
+		//}
+		//if aux {
+		//	if collectedTweetCreatedAt.Before(endLimitTimestamp) {
+		//		fmt.Println("arrived late tweet!")
+		//	}
+		//}
+		//
+		if collectedTweetCreatedAt.Equal(endLimitTimestamp.Add(waitingAfter * time.Second)) {
 			break
 		}
+		//if currentMinute == collectedTweetCreatedAt.Minute() && startSecondMark <= collectedTweetCreatedAt.Second() && collectedTweetCreatedAt.Second() <= (startSecondMark+extractingDuration) {
+		//	heap.Push(tweets, collectedTweet["data"])
+		//}
+		//if collectedTweetCreatedAt.Second() == (startSecondMark+extractingDuration)+5 {
+		//	break
+		//}
 	}
 
 	var tweetsResponse []CollectedTweet
