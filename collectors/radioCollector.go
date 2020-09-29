@@ -83,6 +83,11 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 	var audioBytes []byte
 	var invalidCounter int
 	for frameNumber := 0; frameNumber < 300; frameNumber++ {
+		if invalidCounter > 1500 {
+			log.Error("too many non-valid frames")
+			ch <- Event{"", "", 2}
+			return
+		}
 		b, _ := reader.ReadByte()
 		audioBytes = append(audioBytes, b)
 		if frameNumber == 0 {
