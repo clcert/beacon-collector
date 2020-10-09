@@ -7,7 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 	"net/http"
-	"strconv"
 )
 
 type RadioCollector struct{}
@@ -168,8 +167,8 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		// check first frame hash property (first byte equals 0)
 		if frameNumber == 0 {
 			firstFrameHashedHex := fmt.Sprintf("%x", sha3.Sum512(firstFrame))
-			thirdHexDigit, err := strconv.Atoi(firstFrameHashedHex[2:3])
-			if firstFrameHashedHex[0:2] != "00" || thirdHexDigit > 7 || err != nil {
+			thirdHexDigit := firstFrameHashedHex[2:3]
+			if firstFrameHashedHex[0:2] != "00" || !validThirdDigit(thirdHexDigit) {
 				invalidCounter += 1
 				frameNumber -= 1
 				firstFrame = []byte{}
@@ -181,9 +180,20 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 	// defer fileMP3.Close()
 	// fileMP3.Write(audioBytes)
 	firstFrameHashedHex := fmt.Sprintf("%x", sha3.Sum512(firstFrame))
+	fmt.Println(firstFrameHashedHex)
 	audioHex := hex.EncodeToString(audioBytes)
 	// return audioHex, firstFrameHashedHex, 0
 	ch <- Event{audioHex, firstFrameHashedHex, 0}
+}
+
+func validThirdDigit(char string) bool {
+	validCharacters := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b"}
+	for _, b := range validCharacters {
+		if b == char {
+			return true
+		}
+	}
+	return false
 }
 
 func (r RadioCollector) estimateEntropy() int {
