@@ -9,4 +9,5 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+	github.com/clcert/vdf v0.0.0-20211214220831-099a826a5b44
 )

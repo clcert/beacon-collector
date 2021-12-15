@@ -2,9 +2,14 @@ package utils
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"github.com/clcert/beacon-collector-go/db"
+	"github.com/clcert/vdf/govdf"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
+	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -42,20 +47,21 @@ func getEventsCollectedHashed(timestamp time.Time) []string {
 }
 
 func generateExternalValue(eventsCollected []string, timestamp time.Time) {
-	db := db.ConnectDB()
-	defer db.Close()
+	dbConn := db.ConnectDB()
+	defer dbConn.Close()
 
 	hashedEvents := hashEvents(eventsCollected)
+	log.Debug("Calculating VDF...")
 	externalEvent := vdf(hashedEvents)
 	addEventStatement := `INSERT INTO external_events (value, pulse_timestamp, status_collected) VALUES ($1, $2, $3)`
 
-	_, err := db.Exec(addEventStatement, hex.EncodeToString(externalEvent[:]), timestamp, 0)
+	_, err := dbConn.Exec(addEventStatement, hex.EncodeToString(externalEvent), timestamp, 0)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
 		}).Error("Failed to add External Events to database")
 	}
-
+	log.Debug("Process Finalized!")
 }
 
 // H(e1 || e2 || ... || en)
@@ -68,6 +74,26 @@ func hashEvents(events []string) [64]byte {
 	return sha3.Sum512(byteEvents)
 }
 
-func vdf(events [64]byte) [64]byte {
-	return sha3.Sum512(events[:])
+func vdf(events [64]byte) []byte {
+	// Open our vdfConfig
+	jsonFile, err := os.Open("utils/vdfConfig.json")
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		fmt.Println(err)
+	}
+	// defer the closing of our dbConfig so that we can parse it later on
+	defer jsonFile.Close()
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	var vdfConfig map[string]string
+	json.Unmarshal(byteValue, &vdfConfig)
+
+	seed := govdf.GetRandomSeed()
+	govdf.SetServer(vdfConfig["vdfServer"])
+
+	lbda := 1024
+	T := 2000000
+
+	y, _ := govdf.Eval(T, lbda, events[:], seed)
+	return y
 }

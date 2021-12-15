@@ -1,5 +1,7 @@
 github.com/cenkalti/backoff v2.1.1+incompatible h1:tKJnvO2kl0zmb/jA5UKAt4VoEVw1qxKWjE/Bpp46npY=
 github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
+github.com/clcert/vdf v0.0.0-20211214220831-099a826a5b44 h1:kbkiPn+p09uJ3DJWVzBBtRV4Jpm5sk40j0eAAZA0Z+I=
+github.com/clcert/vdf v0.0.0-20211214220831-099a826a5b44/go.mod h1:dTHpg7xneOdsmAnGsHfVlH+ij9PG7qK6rxJvTdrlYKQ=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
