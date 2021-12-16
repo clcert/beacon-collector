@@ -8,7 +8,7 @@ import (
 )
 
 func AggregateEvents() {
-	log.Debug("Collecting Events...")
+	log.Debug("start events collection")
 
 	now := time.Now().UTC()
 	nextRecordTimestamp := now.Add(time.Minute)
@@ -30,15 +30,18 @@ func AggregateEvents() {
 
 	var radioCollector collectors.RadioCollector
 	wg.Add(1)
-	collectors.Process(radioCollector, nextRecordTimestamp, &wg)
+	go collectors.Process(radioCollector, nextRecordTimestamp, &wg)
 
 	var ethCollector collectors.EthereumCollector
 	wg.Add(1)
 	go collectors.Process(ethCollector, nextRecordTimestamp, &wg)
 
+	// wg.Add(1)
+	// go CleanOldEvents(&wg)
+
 	wg.Wait()
 
-	log.Debug("Events Collected!")
+	log.Debug("finish events collection")
 
 	generateExternalValue(getEventsCollectedHashed(nextRecordTimestamp), nextRecordTimestamp)
 }
