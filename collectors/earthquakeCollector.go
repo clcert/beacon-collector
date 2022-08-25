@@ -3,12 +3,13 @@ package collectors
 import (
 	"encoding/hex"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/sha3"
-	"golang.org/x/net/html"
 	"net/http"
 	"strconv"
 	"strings"
+
+	goquery "github.com/PuerkitoBio/goquery"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/sha3"
 )
 
 type EarthquakeCollector struct{}
@@ -28,7 +29,7 @@ func (e EarthquakeCollector) sourceName() string {
 
 func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	prefixURL := "http://www.sismologia.cl"
-	resp, err := http.Get(prefixURL + "/links/ultimos_sismos.html")
+	resp, err := http.Get(prefixURL + "/index.html")
 	// handle the error if there is one
 	if err != nil {
 		log.Error("failed to get earthquake event")
@@ -45,23 +46,25 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	body := resp.Body
 	defer body.Close()
 
-	// Get last earthquake URL
-	var lastEarthquakesURL []string
-	z := html.NewTokenizer(body)
-	for z.Token().Data != "html" {
-		var tt = z.Next()
-		if tt == html.StartTagToken {
-			t := z.Token()
-			if t.Data == "a" {
-				for _, a := range t.Attr {
-					if a.Key == "href" {
-						lastEarthquakesURL = append(lastEarthquakesURL, a.Val)
-						break
-					}
-				}
-			}
-		}
+	log.Debug("Looking for earthquake events...")
+
+	docIndex, err := goquery.NewDocumentFromReader(body)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	// Get last earthquakes URLs
+	var lastEarthquakesURL []string
+	docIndex.Find(".sismologia").Each(
+		func(i int, s *goquery.Selection) {
+			s.Find("a").Each(
+				func(i int, s *goquery.Selection) {
+					url, _ := s.Attr("href")
+					lastEarthquakesURL = append(lastEarthquakesURL, url)
+				},
+			)
+		},
+	)
 
 	var lastEarthquakeURL string
 	var status = 0
@@ -85,39 +88,35 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	defer body.Close()
 	var content []string
 
-	// Get data from last earthquake
-	z = html.NewTokenizer(body)
-	for z.Token().Data != "html" {
-		var tt = z.Next()
-		if tt == html.StartTagToken {
-			t := z.Token()
-			if t.Data == "td" {
-				inner := z.Next()
-				if inner == html.StartTagToken {
-					t := z.Token()
-					isAnchor := t.Data == "a"
-					if isAnchor {
-						z.Next()
-						text := (string)(z.Text())
-						t := strings.TrimSpace(text)
-						content = append(content, t)
-					}
-				}
-				if inner == html.TextToken {
-					text := (string)(z.Text())
-					t := strings.TrimSpace(text)
-					content = append(content, t)
-				}
-			}
-		}
+	docEarthquake, err := goquery.NewDocumentFromReader(body)
+	if err != nil {
+		log.Fatal(err)
 	}
 
+	ommit := true
+	docEarthquake.Find(".sismologia.informe").Each(
+		func(i int, s *goquery.Selection) {
+			s.Find("td").Each(
+				func(i int, s *goquery.Selection) {
+					text := strings.TrimSpace(s.Text())
+					if !ommit {
+						content = append(content, text)
+					}
+					ommit = !ommit
+				},
+			)
+		},
+	)
+
 	lastEarthquakeID := getIDFromURL(lastEarthquakeURL)
-	lastEarthquake := createEarthquakeObject(cleanData(content), lastEarthquakeID)
+	log.Debug("Last earthquake ID: " + lastEarthquakeID)
+	lastEarthquake := createEarthquakeObject(content, lastEarthquakeID)
+	log.Debug("Last earthquake: " + EarthquakeCanonicalForm(lastEarthquake))
 	lastEarthquakeMetadata := generateEarthquakeMetadata(lastEarthquake)
 	lastEarthquakeAsJSONBytes, _ := json.Marshal(lastEarthquake)
 	lastEarthquakeAsJSONString := string(lastEarthquakeAsJSONBytes)
 	// return lastEarthquakeAsJSONString, lastEarthquakeMetadata, status
+	log.Debug("Done EarthquakeCollector")
 	ch <- Event{lastEarthquakeAsJSONString, lastEarthquakeMetadata, status}
 }
 
@@ -132,24 +131,14 @@ func getIDFromURL(url string) string {
 	return strings.Split(id, ".html")[0]
 }
 
-func cleanData(c []string) []string {
-	var ret []string
-	for i := 0; i < len(c); i++ {
-		if i%2 != 0 {
-			ret = append(ret, c[i])
-		}
-	}
-	return ret
-}
-
 func createEarthquakeObject(data []string, id string) Earthquake {
 	var lastEarthquake Earthquake
 	lastEarthquake.ID = id
-	lastEarthquake.UTC = data[1]
-	lastEarthquake.Latitude = data[2]
-	lastEarthquake.Longitude = data[3]
-	lastEarthquake.Depth = cleanProperty(data[4])
-	lastEarthquake.Magnitude = cleanProperty(data[5])
+	lastEarthquake.UTC = data[2]
+	lastEarthquake.Latitude = data[3]
+	lastEarthquake.Longitude = data[4]
+	lastEarthquake.Depth = cleanProperty(data[5])
+	lastEarthquake.Magnitude = cleanProperty(data[6])
 	return lastEarthquake
 }
 
