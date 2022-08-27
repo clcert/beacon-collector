@@ -30,15 +30,17 @@ func (e EarthquakeCollector) sourceName() string {
 func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	prefixURL := "http://www.sismologia.cl"
 	resp, err := http.Get(prefixURL + "/index.html")
+
+	log.Debug("Requesting to " + prefixURL + "/index.html")
 	// handle the error if there is one
 	if err != nil {
-		log.Error("failed to get earthquake event")
+		log.Error("Failed to connect, aborting.")
 		// return "", "", 2
 		ch <- Event{"", "", 2}
 		return
 	}
 	if resp.StatusCode != 200 {
-		log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
+		log.Error("Error in response. Code: " + strconv.Itoa(resp.StatusCode))
 		// return "", "", 2
 		ch <- Event{"", "", 2}
 		return
@@ -46,14 +48,13 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	body := resp.Body
 	defer body.Close()
 
-	log.Debug("Looking for earthquake events...")
-
 	docIndex, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Get last earthquakes URLs
+	// Get latest earthquakes
+	log.Debug("Looking for earthquake events...")
 	var lastEarthquakesURL []string
 	docIndex.Find(".sismologia").Each(
 		func(i int, s *goquery.Selection) {
@@ -66,18 +67,19 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 		},
 	)
 
+	// Keep only the last earthquake
 	var lastEarthquakeURL string
 	var status = 0
 	for _, v := range lastEarthquakesURL {
 		resp, err = http.Get(prefixURL + v)
 		if err != nil {
-			log.Error("failed to get earthquake event")
+			log.Error("Failed to get earthquake event.")
 			// return "", "", 2
 			ch <- Event{"", "", 2}
 			return
 		}
 		if resp.StatusCode != 200 {
-			log.Error("earthquake error response code: " + strconv.Itoa(resp.StatusCode))
+			log.Error("Earthquake error response code: " + strconv.Itoa(resp.StatusCode))
 			status = 8
 		} else {
 			lastEarthquakeURL = v
@@ -86,13 +88,14 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	}
 	body = resp.Body
 	defer body.Close()
-	var content []string
 
+	var content []string
 	docEarthquake, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	log.Debug("Collecting information from earthquake event...")
 	ommit := true
 	docEarthquake.Find(".sismologia.informe").Each(
 		func(i int, s *goquery.Selection) {
@@ -109,15 +112,12 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	)
 
 	lastEarthquakeID := getIDFromURL(lastEarthquakeURL)
-	log.Debug("Last earthquake ID: " + lastEarthquakeID)
 	lastEarthquake := createEarthquakeObject(content, lastEarthquakeID)
-	log.Debug("Last earthquake: " + EarthquakeCanonicalForm(lastEarthquake))
 	lastEarthquakeMetadata := generateEarthquakeMetadata(lastEarthquake)
 	lastEarthquakeAsJSONBytes, _ := json.Marshal(lastEarthquake)
 	lastEarthquakeAsJSONString := string(lastEarthquakeAsJSONBytes)
-	// return lastEarthquakeAsJSONString, lastEarthquakeMetadata, status
-	log.Debug("Done EarthquakeCollector")
 	ch <- Event{lastEarthquakeAsJSONString, lastEarthquakeMetadata, status}
+	// return lastEarthquakeAsJSONString, lastEarthquakeMetadata, status
 }
 
 func generateEarthquakeMetadata(eq Earthquake) string {
