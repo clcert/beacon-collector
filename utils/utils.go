@@ -54,10 +54,11 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	hashedEvents := hashEvents(eventsCollected)
 	log.Debug("Calculating VDF...")
-	externalEvent := vdf(hashedEvents)
-	addEventStatement := `INSERT INTO external_values (value, pulse_timestamp, status) VALUES ($1, $2, $3)`
+	externalVdfOut := vdf(hashedEvents)
+	externalValue := sha3.Sum512(externalVdfOut)
+	addEventStatement := `INSERT INTO external_values (vdf_output, external_value, pulse_timestamp, status) VALUES ($1, $2, $3, $4)`
 
-	_, err := dbConn.Exec(addEventStatement, hex.EncodeToString(externalEvent), timestamp, 0)
+	_, err := dbConn.Exec(addEventStatement, hex.EncodeToString(externalVdfOut), hex.EncodeToString(externalValue[:]), timestamp, 0)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
