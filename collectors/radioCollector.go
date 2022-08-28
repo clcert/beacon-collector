@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
+	"net/http"
+
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
-	"net/http"
 )
 
 type RadioCollector struct{}
