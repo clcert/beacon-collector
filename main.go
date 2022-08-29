@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/clcert/beacon-collector-go/utils"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 const secondMarkInit = 0
