@@ -69,7 +69,7 @@ var BITRATE = map[int]map[byte]int{
 }
 
 func (r RadioCollector) collectEvent(ch chan Event) {
-	streamURL := "http://200.89.71.21:8000/;"
+	streamURL := "http://streamuchile.teslati.com/liveruch"
 	resp, _ := http.Get(streamURL)
 
 	if resp == nil {
