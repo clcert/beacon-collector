@@ -1,6 +1,6 @@
 #!/bin/sh
 FILE="../README.md"
-EXT_TXT_SRC_DESC=$(python3 to_txt.py $FILE)
+EXT_TXT_SRC_DESC=$(python3 parse_md.py $FILE)
 EXT_SRC_ID=$(python3 apply_sha3.py $FILE)
 
 # DATABASE CONFIGURATIONS
