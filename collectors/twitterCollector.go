@@ -178,7 +178,11 @@ func getBearerToken(consumerKey string, consumerSecret string) string {
 	req, _ := http.NewRequest("POST", "https://api.twitter.com/oauth2/token", bytes.NewBuffer([]byte("grant_type=client_credentials")))
 	req.Header.Add("Authorization", "Basic "+credentialsBase64)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
 	defer resp.Body.Close()
 
 	response, _ := ioutil.ReadAll(resp.Body)
