@@ -4,15 +4,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/clcert/beacon-collector-go/db"
 	"github.com/clcert/vdf/govdf"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
-	"io/ioutil"
-	"os"
-	"sync"
-	"time"
 )
 
 func getEventsCollectedHashed(timestamp time.Time) []string {
@@ -54,11 +55,18 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	hashedEvents := hashEvents(eventsCollected)
 	log.Debug("Calculating VDF...")
-	externalVdfOut := vdf(hashedEvents)
-	externalValue := sha3.Sum512(externalVdfOut)
-	addEventStatement := `INSERT INTO external_values (vdf_output, external_value, pulse_timestamp, status) VALUES ($1, $2, $3, $4)`
+	seed := govdf.GetRandomSeed()
+	vdfOutput, vdfProof := vdf(seed, hashedEvents)
+	externalValue := sha3.Sum512(vdfOutput)
+	addEventStatement := `INSERT INTO external_values (vdf_preimage, vdf_output, vdf_proof, external_value, pulse_timestamp, status) VALUES ($1, $2, $3, $4, $5, $6)`
 
-	_, err := dbConn.Exec(addEventStatement, hex.EncodeToString(externalVdfOut), hex.EncodeToString(externalValue[:]), timestamp, 0)
+	_, err := dbConn.Exec(
+		addEventStatement,
+		hex.EncodeToString(hashedEvents[:]),  // preimage
+		hex.EncodeToString(vdfOutput),        // VDF output
+		hex.EncodeToString(vdfProof),         // VDF proof
+		hex.EncodeToString(externalValue[:]), // external value
+		timestamp, 0)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"pulseTimestamp": timestamp,
@@ -77,7 +85,7 @@ func hashEvents(events []string) [64]byte {
 	return sha3.Sum512(byteEvents)
 }
 
-func vdf(events [64]byte) []byte {
+func vdf(seed []byte, events [64]byte) ([]byte, []byte) {
 	// Open our vdfConfig
 	jsonFile, err := os.Open("utils/vdfConfig.json")
 	// if we os.Open returns an error then handle it
@@ -91,14 +99,13 @@ func vdf(events [64]byte) []byte {
 	var vdfConfig map[string]string
 	json.Unmarshal(byteValue, &vdfConfig)
 
-	seed := govdf.GetRandomSeed()
 	govdf.SetServer(vdfConfig["vdfServer"])
 
 	lbda := 1024
 	T := 2000000
 
-	y, _ := govdf.Eval(T, lbda, events[:], seed)
-	return y
+	out, proof := govdf.Eval(T, lbda, events[:], seed)
+	return out, proof
 }
 
 type EventSimplified struct {
