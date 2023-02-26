@@ -58,11 +58,12 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 	seed := govdf.GetRandomSeed()
 	vdfOutput, vdfProof := vdf(seed, hashedEvents)
 	externalValue := sha3.Sum512(vdfOutput)
-	addEventStatement := `INSERT INTO external_values (vdf_preimage, vdf_output, vdf_proof, external_value, pulse_timestamp, status) VALUES ($1, $2, $3, $4, $5, $6)`
+	addEventStatement := `INSERT INTO external_values (vdf_preimage, vdf_seed, vdf_output, vdf_proof, external_value, pulse_timestamp, status) VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err := dbConn.Exec(
 		addEventStatement,
 		hex.EncodeToString(hashedEvents[:]),  // preimage
+		hex.EncodeToString(seed),             // VDF seed
 		hex.EncodeToString(vdfOutput),        // VDF output
 		hex.EncodeToString(vdfProof),         // VDF proof
 		hex.EncodeToString(externalValue[:]), // external value
