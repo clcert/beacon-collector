@@ -53,7 +53,7 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	//status := comparePrevious(metadata, statusCollection, c)
 	//
 	//canonical := c.getCanonicalForm(data)
-	//digest := generateDigest(canonical)
+	//digest := GenerateDigest(canonical)
 	//sourceName := c.sourceName()
 	//estimatedEntropy := c.estimateEntropy()
 	//
@@ -74,7 +74,7 @@ func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.
 	status := comparePrevious(metadata, statusCollection, c)
 
 	canonical := c.getCanonicalForm(data)
-	digest := generateDigest(canonical)
+	digest := GenerateDigest(canonical)
 	sourceName := c.sourceName()
 	estimatedEntropy := c.estimateEntropy()
 
@@ -91,7 +91,7 @@ func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.
 	log.Debugf("complete %s collection", c.sourceName())
 }
 
-func generateDigest(canonical string) string {
+func GenerateDigest(canonical string) string {
 	if canonical == "" {
 		return strings.Repeat("0", 128)
 	}

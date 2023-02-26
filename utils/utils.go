@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/clcert/beacon-collector-go/collectors"
 	"github.com/clcert/beacon-collector-go/db"
 	"github.com/clcert/vdf/govdf"
 	"github.com/lib/pq"
@@ -55,19 +56,22 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	hashedEvents := hashEvents(eventsCollected)
 	log.Debug("Computing VDF...")
+
 	seed := govdf.GetRandomSeed()
 	vdfOutput, vdfProof := vdf(seed, hashedEvents)
 	log.Debug("VDF done. Saving...")
-	externalValue := sha3.Sum512(vdfOutput)
+
+	vdfOutStr := hex.EncodeToString(vdfOutput)
+	externalValue := collectors.GenerateDigest(vdfOutStr)
 	addEventStatement := `INSERT INTO external_values (vdf_preimage, vdf_seed, vdf_output, vdf_proof, external_value, pulse_timestamp, status) VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	_, err := dbConn.Exec(
 		addEventStatement,
-		hex.EncodeToString(hashedEvents[:]),  // preimage
-		hex.EncodeToString(seed),             // VDF seed
-		hex.EncodeToString(vdfOutput),        // VDF output
-		hex.EncodeToString(vdfProof),         // VDF proof
-		hex.EncodeToString(externalValue[:]), // external value
+		hex.EncodeToString(hashedEvents[:]), // preimage
+		hex.EncodeToString(seed),            // VDF seed
+		vdfOutStr,                           // VDF output
+		hex.EncodeToString(vdfProof),        // VDF proof
+		externalValue,                       // external value
 		timestamp, 0)
 	if err != nil {
 		log.WithFields(log.Fields{
