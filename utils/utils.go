@@ -12,7 +12,6 @@ import (
 	"github.com/clcert/beacon-collector-go/collectors"
 	"github.com/clcert/beacon-collector-go/db"
 	"github.com/clcert/vdf/govdf"
-	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 )
@@ -114,51 +113,25 @@ func vdf(seed []byte, events [64]byte) ([]byte, []byte) {
 	return out, proof
 }
 
-type EventSimplified struct {
-	Id             int       `json:"id"`
-	PulseTimestamp time.Time `json:"pulseTimestamp"`
-}
-
 func CleanOldEvents(wg *sync.WaitGroup) {
 	defer wg.Done()
-	// Clean old events that don't fulfill the following requirements:
-	// 1. are less than X hour old
-	// 2. his output value is not present in previous_hour, previous_day, previous_month or previous_year of any pulse
+	// Clean events that:
+	// 1. are older than 1 hour
+	// 2. are not in the first pulse of an hour
+	// TODO: we could also delete events that have some specific status
 	dbConn := db.ConnectDB()
 	defer dbConn.Close()
 
-	now := time.Now().UTC()
-	limitTimestamp := now.Add(-time.Hour)
+	var defaultMessage = "deleted"
 
-	var defaultMessage = "delete"
-	// getPossiblesStatement := `SELECT id, pulse_timestamp FROM events WHERE digest != $1 AND pulse_timestamp < $2`
-	getPossiblesStatement := `SELECT id, pulse_timestamp FROM events WHERE digest != $1 AND pulse_timestamp < $2 AND (event_status & 1) != 1`
-	rows, err := dbConn.Query(getPossiblesStatement, defaultMessage, limitTimestamp)
+	// Older than 1 hour and no
+	replaceRawEventsStatement :=
+		`UPDATE events SET raw_event = $1, canonical_form = $1 ` +
+			`WHERE pulse_timestamp < (NOW() - INTERVAL '1 hour') ` +
+			`AND EXTRACT(minute FROM created_at) = 0 AND raw_event != $1 `
+	_, err := dbConn.Exec(replaceRawEventsStatement, defaultMessage)
 	if err != nil {
-		// something
+		log.Error("failed in deleting raw events")
 		panic(err)
 	}
-	var allPossibleEvents []EventSimplified
-	defer rows.Close()
-	for rows.Next() {
-		var possibleEventToDelete EventSimplified
-		err = rows.Scan(&possibleEventToDelete.Id, &possibleEventToDelete.PulseTimestamp)
-		if err != nil {
-			panic(err)
-		}
-		allPossibleEvents = append(allPossibleEvents, possibleEventToDelete)
-	}
-	var eventsIDToDelete []int
-	for _, event := range allPossibleEvents {
-		if event.PulseTimestamp.Minute() != 0 {
-			eventsIDToDelete = append(eventsIDToDelete, event.Id)
-		}
-	}
-
-	deleteRawStatement := `UPDATE events SET raw_event = $1, canonical_form = $1 WHERE id = ANY($2)`
-	_, err = dbConn.Exec(deleteRawStatement, defaultMessage, pq.Array(eventsIDToDelete))
-	if err != nil {
-		panic(err)
-	}
-
 }
