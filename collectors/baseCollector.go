@@ -49,6 +49,8 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 		saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", 2)
 	}
 
+	log.Infof("complete %s collection", c.sourceName())
+
 	// data, metadata, statusCollection := c.collectEvent()
 	//status := comparePrevious(metadata, statusCollection, c)
 	//
@@ -67,7 +69,6 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	//	}).Error("failed to add event to database")
 	//	log.Error(err)
 	//}
-	//log.Debugf("complete %s collection", c.sourceName())
 }
 
 func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.Time, data string, metadata string, statusCollection int) {
@@ -88,7 +89,7 @@ func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.
 		}).Error("failed to add event to database")
 		log.Error(err)
 	}
-	log.Debugf("complete %s collection", c.sourceName())
+	log.Infof("complete %s collection", c.sourceName())
 }
 
 func GenerateDigest(canonical string) string {

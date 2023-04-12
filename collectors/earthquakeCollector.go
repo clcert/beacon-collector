@@ -31,7 +31,7 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	prefixURL := "http://www.sismologia.cl"
 	resp, err := http.Get(prefixURL + "/index.html")
 
-	log.Debug("Requesting to " + prefixURL + "/index.html")
+	log.Info("requesting latest earthquakes to " + prefixURL + "/index.html")
 	// handle the error if there is one
 	if err != nil {
 		log.Error("Failed to connect, aborting.")
@@ -54,7 +54,7 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 	}
 
 	// Get latest earthquakes
-	log.Debug("Looking for earthquake events...")
+	log.Info("looking for earthquake events...")
 	var lastEarthquakesURL []string
 	docIndex.Find(".sismologia").Each(
 		func(i int, s *goquery.Selection) {
@@ -95,7 +95,7 @@ func (e EarthquakeCollector) collectEvent(ch chan Event) {
 		log.Fatal(err)
 	}
 
-	log.Debug("Collecting information from earthquake event...")
+	log.Info("collecting information from earthquake event...")
 	ommit := true
 	docEarthquake.Find(".sismologia.informe").Each(
 		func(i int, s *goquery.Selection) {

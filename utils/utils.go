@@ -54,11 +54,11 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 	defer dbConn.Close()
 
 	hashedEvents := hashEvents(eventsCollected)
-	log.Debug("Computing VDF...")
+	log.Info("computing vdf...")
 
 	seed := govdf.GetRandomSeed()
 	vdfOutput, vdfProof := vdf(seed, hashedEvents)
-	log.Debug("VDF done. Saving...")
+	log.Info("vdf done, saving...")
 
 	vdfOutStr := hex.EncodeToString(vdfOutput)
 	externalValue := collectors.GenerateDigest(vdfOutStr)
@@ -77,7 +77,7 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 			"pulseTimestamp": timestamp,
 		}).Error("failed to add external value to database")
 	}
-	log.Debug("Process Finalized!")
+	log.Info("external value added to database")
 }
 
 // H(e1 || e2 || ... || en)
@@ -123,7 +123,7 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 	defer dbConn.Close()
 
 	var defaultMessage = "deleted"
-	log.Info("Cleaning old events...")
+	log.Info("cleaning old events from database...")
 
 	// Older than 1 hour and no
 	replaceRawEventsStatement :=
