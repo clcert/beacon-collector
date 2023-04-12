@@ -136,5 +136,5 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	log.Info("Old events cleaned!")
+	log.Info("old events cleaned!")
 }
