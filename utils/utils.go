@@ -123,6 +123,7 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 	defer dbConn.Close()
 
 	var defaultMessage = "deleted"
+	log.Info("Cleaning old events...")
 
 	// Older than 1 hour and no
 	replaceRawEventsStatement :=
@@ -134,4 +135,6 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 		log.Error("failed in deleting raw events")
 		panic(err)
 	}
+
+	log.Info("Old events cleaned!")
 }
