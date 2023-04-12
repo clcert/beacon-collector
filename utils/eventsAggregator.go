@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"github.com/clcert/beacon-collector-go/collectors"
-	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
+
+	"github.com/clcert/beacon-collector-go/collectors"
+	log "github.com/sirupsen/logrus"
 )
 
 func AggregateEvents() {
@@ -24,9 +25,9 @@ func AggregateEvents() {
 	wg.Add(1)
 	go collectors.Process(eqCollector, nextRecordTimestamp, &wg)
 
-	var twCollector collectors.TwitterCollector
-	wg.Add(1)
-	go collectors.Process(twCollector, nextRecordTimestamp, &wg)
+	// var twCollector collectors.TwitterCollector
+	// wg.Add(1)
+	// go collectors.Process(twCollector, nextRecordTimestamp, &wg)
 
 	var radioCollector collectors.RadioCollector
 	wg.Add(1)

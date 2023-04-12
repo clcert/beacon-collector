@@ -20,25 +20,15 @@
 - **Recommended sampling trials**: immediately perform successive sampling. 
 - **Fallback options**: None.
 
-## 3. Twitter
-- **External Source**: TODO.
-- **Intended update frequency**: every minute. 
-- **Intended update moment**: at the beginning of each minute (0" second mark). 
-- **Repeat until new available value**: yes.
-- **Local hashing**: yes. 
-- **Default URL for access**: https://developer.twitter.com/en/docs/twitter-api
-- **Recommended sampling trials**: immediately perform successive sampling. 
-- **Fallback options**: None.
-
-## 4. Ethereum Blockchain
+## 3. Ethereum Blockchain
 - **External Source**: Ethereum is a cryptocurrency that uses (as Bitcoin) a Blockchain in order to ensure the transactions performed by the users. This blockchain is generating new blocks approx. every 12 seconds. The collector gets the hash value of the last block published in the blockchain, requesting it from 4 API sources and keeping the first valid response. Those sources are a local node, Infura, Etherscan, and Rivet.
 - **Intended update frequency**: every minute. 
 - **Intended update moment**: at the beginning of each minute (0" second mark) will gets the hash value of the last block published in the blockchain.
 - **Repeat until new available value**: yes.
 - **Local hashing**: yes. 
-- **Default URL for access**: Infura https://infura.io/ | Etherscan https://etherscan.io | Rivet https://rivet.cloud/docs/topics/api/index.html
+- **Default URL for access**: None (a local node for Ethereum Blockchain is used).
 - **Recommended sampling trials**: immediately perform successive sampling. 
-- **Fallback options**: None.
+- **Fallback options**: Infura https://infura.io/ | Etherscan https://etherscan.io | Rivet https://rivet.cloud/docs/topics/api/index.html.
 
 
 All the hashed values obtained, in parallel, from the 4 sources described before will be concatenated and be used as input of a VDF (Verifiable Delay Function) whose output will be the external value used in the pulse generation of the current minute.
