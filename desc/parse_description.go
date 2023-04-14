@@ -6,10 +6,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/clcert/beacon-collector-go/db"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 )
 
-func ParseMd(content string) string {
+func parseMd(content string) string {
 	cleanned := strings.ReplaceAll(content, "*", "")
 	cleanned = strings.ReplaceAll(cleanned, "`", "")
 	cleanned = strings.ReplaceAll(cleanned, "# ", "")
@@ -19,24 +21,34 @@ func ParseMd(content string) string {
 	return cleanned
 }
 
+func insertDescriptionInDB(content string, digestedContent string) {
+	dbConn := db.ConnectDB()
+	defer dbConn.Close()
+
+	addExternalDescription := `INSERT INTO external_sources_info (source_id, source_description, source_status) 
+		 VALUES ($1, $2, 0) ON CONFLICT DO NOTHING`
+	_, err := dbConn.Exec(addExternalDescription, digestedContent, content)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"source_id":          digestedContent,
+			"source_description": content,
+		}).Error("failed to add externals description to database")
+		log.Error(err)
+	}
+	log.Info("external values description added to database")
+}
+
 func main() {
 	filename := os.Args[1]
-	operation := os.Args[2]
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}
-	parsedContent := ParseMd(string(content))
-	if operation == "parse" {
-		fmt.Println(parsedContent)
-		os.Exit(0)
-	} else if operation == "hash" {
-		hashObject := sha3.New512()
-		hashObject.Write([]byte(parsedContent))
-		digest := hashObject.Sum(nil)
-		fmt.Printf("%x\n", digest)
-	} else {
-		fmt.Println("Unknown operation")
-		os.Exit(1)
-	}
+	parsedContent := parseMd(string(content))
+
+	hashObject := sha3.New512()
+	hashObject.Write([]byte(parsedContent))
+	digest := hashObject.Sum(nil)
+	digestedContent := fmt.Sprintf("%x", digest)
+	insertDescriptionInDB(parsedContent, digestedContent)
 }
