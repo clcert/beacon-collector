@@ -1,7 +1,7 @@
 #!/bin/sh
 FILE="../README.md"
-EXT_TXT_SRC_DESC=$(python3 parse_md.py $FILE)
-EXT_SRC_ID=$(python3 apply_sha3.py $FILE)
+EXT_TXT_SRC_DESC=$(go run parse_md.py $FILE parse)
+EXT_SRC_ID=$(go run apply_sha3.py $FILE hash)
 
 # DATABASE CONFIGURATIONS
 DB_HOST=$(grep -o '"host": "[^"]*' ../db/dbConfig.json | grep -o '[^"]*$')
