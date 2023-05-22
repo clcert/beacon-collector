@@ -129,7 +129,7 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 	replaceRawEventsStatement :=
 		`UPDATE events SET raw_event = $1, canonical_form = $1 ` +
 			`WHERE pulse_timestamp < (NOW() - INTERVAL '1 hour') ` +
-			`AND EXTRACT(minute FROM pulse_timestamp) = 0 AND raw_event != $1 `
+			`AND EXTRACT(minute FROM pulse_timestamp) != 0 AND raw_event != $1 `
 	_, err := dbConn.Exec(replaceRawEventsStatement, defaultMessage)
 	if err != nil {
 		log.Error("failed in deleting raw events")
