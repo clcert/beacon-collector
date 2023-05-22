@@ -122,7 +122,7 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 	dbConn := db.ConnectDB()
 	defer dbConn.Close()
 
-	var defaultMessage = "deleted"
+	var defaultMessage = "DELETED"
 	log.Info("cleaning old events from database...")
 
 	// Older than 1 hour and no
