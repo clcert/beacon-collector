@@ -128,8 +128,8 @@ func CleanOldEvents(wg *sync.WaitGroup) {
 	// 1 hour old and not minute 0
 	replaceRawEventsStatement :=
 		`UPDATE events SET raw_event = $1, canonical_form = $1 ` +
-			`WHERE pulse_timestamp >= (NOW() - INTERVAL '1 hour') ` +
-			`AND pulse_timestamp < (NOW() - INTERVAL '59 mins') ` +
+			`WHERE pulse_timestamp >= (NOW() - INTERVAL '1 hour 1 min') ` +
+			`AND pulse_timestamp < (NOW() - INTERVAL '1 hour') ` +
 			`AND EXTRACT(minute FROM pulse_timestamp) != 0`
 	_, err := dbConn.Exec(replaceRawEventsStatement, defaultMessage)
 	if err != nil {
