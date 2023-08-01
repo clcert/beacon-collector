@@ -15,12 +15,12 @@ This document describes the algorithm for generating the external value is used 
 - **Fallback options**: None.
 
 ## 2. Radio
-- **External Source**: obtains the byte-stream (mp3-encoded) produced by the public signal of Rock and Pop radio (https://www.rockandpop.cl/).
+- **External Source**: obtains the byte-stream (mp3-encoded) produced by the public signal of Radio Universidad de Chile(https://radio.uchile.cl/senal-en-vivo/).
 - **Intended update frequency**: every minute. 
 - **Intended update moment**: at the beginning of each minute (0" second mark) will recollect 99840 bytes of the stream (approx. 5 seconds). 
 - **Repeat until new available value**: yes.
 - **Local hashing**: yes. 
-- **Default URL for access**: https://14833.live.streamtheworld.com/ROCK_AND_POP_SC (online stream of the radio station). 
+- **Default URL for access**: https://sonic-us.streaming-chile.com/8186/stream (online stream of the radio station). 
 - **Recommended sampling trials**: immediately perform successive sampling. 
 - **Fallback options**: None.
 

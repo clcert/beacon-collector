@@ -72,7 +72,7 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 	// streamUdC := "https://audio.divalstream.com:7019/stream"
 	// streamUC := "http://146.155.190.111/;"
 	// streamRnP := "https://14833.live.streamtheworld.com/ROCK_AND_POP_SC"
-	streamURL := "https://14833.live.streamtheworld.com/ROCK_AND_POP_SC"
+	streamURL := "https://sonic-us.streaming-chile.com/8186/stream" // Radio UChile
 
 	resp, _ := http.Get(streamURL)
 
