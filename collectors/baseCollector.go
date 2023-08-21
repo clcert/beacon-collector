@@ -49,8 +49,6 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 		saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", 2)
 	}
 
-	log.Infof("complete %s collection", c.sourceName())
-
 	// data, metadata, statusCollection := c.collectEvent()
 	//status := comparePrevious(metadata, statusCollection, c)
 	//
