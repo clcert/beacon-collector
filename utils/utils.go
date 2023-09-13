@@ -4,14 +4,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/clcert/beacon-collector-go/collectors"
 	"github.com/clcert/beacon-collector-go/db"
-	"github.com/clcert/vdf/govdf"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 )
@@ -56,7 +55,7 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 	hashedEvents := hashEvents(eventsCollected)
 	log.Info("computing vdf...")
 
-	seed := govdf.GetRandomSeed()
+	seed := getRandomSeed()
 	vdfOutput, vdfProof := vdf(seed, hashedEvents)
 	log.Info("vdf done, saving...")
 
@@ -99,17 +98,17 @@ func vdf(seed []byte, events [64]byte) ([]byte, []byte) {
 	}
 	// defer the closing of our dbConfig so that we can parse it later on
 	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 
 	var vdfConfig map[string]string
 	json.Unmarshal(byteValue, &vdfConfig)
 
-	govdf.SetServer(vdfConfig["vdfServer"])
+	setServer(vdfConfig["vdfServer"])
 
 	lbda := 1024
 	T := 2000000
 
-	out, proof := govdf.Eval(T, lbda, events[:], seed)
+	out, proof := VDFeval(T, lbda, events[:], seed)
 	return out, proof
 }
 
