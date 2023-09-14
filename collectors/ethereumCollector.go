@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type EthereumCollector struct{}
@@ -43,7 +44,7 @@ func getEthToken(source string) string {
 	}
 	defer configJsonFile.Close()
 	ethTokens := make(map[string]string)
-	byteValue, _ := ioutil.ReadAll(configJsonFile)
+	byteValue, _ := io.ReadAll(configJsonFile)
 	json.Unmarshal(byteValue, &ethTokens)
 
 	return ethTokens[source]
@@ -95,7 +96,7 @@ func getBlock(blockType string, source string) (string, string, bool) {
 	body := resp.Body
 	defer body.Close()
 
-	response, _ := ioutil.ReadAll(body)
+	response, _ := io.ReadAll(body)
 	blockInfo := make(map[string]map[string]string)
 	_ = json.Unmarshal(response, &blockInfo)
 	if _, ok := blockInfo["error"]; ok {

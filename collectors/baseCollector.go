@@ -3,12 +3,13 @@ package collectors
 import (
 	"database/sql"
 	"fmt"
-	"github.com/clcert/beacon-collector-go/db"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/sha3"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/clcert/beacon-collector-go/db"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/sha3"
 )
 
 type Collector interface {
@@ -48,25 +49,6 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 		}).Error("timeout")
 		saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", 2)
 	}
-
-	// data, metadata, statusCollection := c.collectEvent()
-	//status := comparePrevious(metadata, statusCollection, c)
-	//
-	//canonical := c.getCanonicalForm(data)
-	//digest := GenerateDigest(canonical)
-	//sourceName := c.sourceName()
-	//estimatedEntropy := c.estimateEntropy()
-	//
-	//addEventStatement := `INSERT INTO events (source_name, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp, canonical_form)
-	//					  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-	//_, err := dbConn.Exec(addEventStatement, sourceName, data, metadata, estimatedEntropy, digest, status, recordTimestamp, canonical)
-	//if err != nil {
-	//	log.WithFields(log.Fields{
-	//		"pulseTimestamp": recordTimestamp,
-	//		"sourceName":     sourceName,
-	//	}).Error("failed to add event to database")
-	//	log.Error(err)
-	//}
 }
 
 func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.Time, data string, metadata string, statusCollection int) {
@@ -78,7 +60,8 @@ func saveCollectionInDatabase(c Collector, dbConn *sql.DB, recordTimestamp time.
 	estimatedEntropy := c.estimateEntropy()
 
 	addEventStatement := `INSERT INTO events (source_name, raw_event, metadata, entropy_estimation, digest, event_status, pulse_timestamp, canonical_form) 
-						  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+
 	_, err := dbConn.Exec(addEventStatement, sourceName, data, metadata, estimatedEntropy, digest, status, recordTimestamp, canonical)
 	if err != nil {
 		log.WithFields(log.Fields{

@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "github.com/lib/pq"
-	"io/ioutil"
+	"io"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 type Config struct {
@@ -28,7 +29,7 @@ func ConnectDB() *sql.DB {
 	defer jsonFile.Close()
 
 	var dbConfig Config
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 	json.Unmarshal(byteValue, &dbConfig)
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",

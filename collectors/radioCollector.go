@@ -78,7 +78,6 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 
 	if resp == nil {
 		log.Error("failed to get radio event")
-		// return "", "", 2
 		ch <- Event{"", "", 2}
 		return
 	}
@@ -99,7 +98,6 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		}
 		if b != 0xff {
 			log.Error("invalid sync byte in radio collector")
-			// return "", "", 2
 			ch <- Event{"", "", 2}
 			return
 		}
@@ -110,7 +108,6 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		}
 		if (b & 0xf0) != 0xf0 {
 			log.Error("invalid sync byte in radio collector")
-			// return "", "", 2
 			ch <- Event{"", "", 2}
 			return
 		}
@@ -135,7 +132,6 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		if bitrate == 0x00 || bitrate == 0x0f {
 			// invalid values
 			log.Error("invalid bitrate value in radio collector")
-			// return "", "", 2
 			ch <- Event{"", "", 2}
 			return
 		}
@@ -143,7 +139,6 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		sampleRate := (b & 0x0c) >> 2
 		if sampleRate == 0x03 {
 			log.Error("invalid samplerate value in radio collector")
-			// return "", "", 2
 			ch <- Event{"", "", 2}
 			return
 		}
@@ -186,7 +181,6 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 	// fileMP3.Write(audioBytes)
 	firstFrameHashedHex := fmt.Sprintf("%x", sha3.Sum512(firstFrame))
 	audioHex := hex.EncodeToString(audioBytes)
-	// return audioHex, firstFrameHashedHex, 0
 	ch <- Event{audioHex, firstFrameHashedHex, 0}
 }
 
