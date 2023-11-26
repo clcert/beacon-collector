@@ -25,16 +25,14 @@ func (e EthereumCollector) collectEvent(ch chan Event) {
 		blockHash, blockNumber, valid := getBlock("latest", source)
 		if valid {
 			if source != "localNode" {
-				status = status | 8
+				status = status | FLES_NotDefaultSource
 			}
-			// return blockHash, blockNumber, status
 			ch <- Event{blockHash, blockNumber, status}
 			return
 		}
 	}
 	log.Error("no ethereum source available")
-	// return "", "", 2
-	ch <- Event{"", "", 2}
+	ch <- Event{"", "", status | FLES_SourceFail}
 }
 
 func getEthToken(source string) string {

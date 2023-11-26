@@ -30,6 +30,12 @@ type Event struct {
 	StatusCollection int
 }
 
+const (
+	FLES_FailCollection = 1
+	FLES_SourceFail = 2
+	FLES_NotDefaultSource = 4
+)
+
 func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	defer wg.Done()
 

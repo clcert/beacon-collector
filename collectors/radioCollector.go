@@ -71,14 +71,13 @@ var BITRATE = map[int]map[byte]int{
 func (r RadioCollector) collectEvent(ch chan Event) {
 	// streamUdC := "https://audio.divalstream.com:7019/stream"
 	// streamUC := "http://146.155.190.111/;"
-	// streamRnP := "https://14833.live.streamtheworld.com/ROCK_AND_POP_SC"
 	streamURL := "https://sonic-us.streaming-chile.com/8186/stream" // Radio UChile
 
 	resp, _ := http.Get(streamURL)
 
 	if resp == nil {
 		log.Error("failed to get radio event")
-		ch <- Event{"", "", 2}
+		ch <- Event{"", "", FLES_SourceFail}
 		return
 	}
 	reader := bufio.NewReader(resp.Body)
@@ -88,7 +87,7 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 	for frameNumber := 0; frameNumber < 300; frameNumber++ {
 		if invalidCounter > 1500 {
 			log.Error("too many non-valid frames")
-			ch <- Event{"", "", 2}
+			ch <- Event{"", "", FLES_SourceFail}
 			return
 		}
 		b, _ := reader.ReadByte()
@@ -98,7 +97,7 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		}
 		if b != 0xff {
 			log.Error("invalid sync byte in radio collector")
-			ch <- Event{"", "", 2}
+			ch <- Event{"", "", FLES_SourceFail}
 			return
 		}
 		b, _ = reader.ReadByte()
@@ -108,15 +107,14 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		}
 		if (b & 0xf0) != 0xf0 {
 			log.Error("invalid sync byte in radio collector")
-			ch <- Event{"", "", 2}
+			ch <- Event{"", "", FLES_SourceFail}
 			return
 		}
 		frameVersion := (b & 0x08) >> 3
 		if (b&0x06)>>1 != 1 {
 			// Layer is not 3 (0x01)
 			log.Error("non layer 3 frame in radio collector")
-			// return "", "", 2
-			ch <- Event{"", "", 2}
+			ch <- Event{"", "", FLES_SourceFail}
 			return
 		}
 		//frameCRC := false
@@ -132,14 +130,14 @@ func (r RadioCollector) collectEvent(ch chan Event) {
 		if bitrate == 0x00 || bitrate == 0x0f {
 			// invalid values
 			log.Error("invalid bitrate value in radio collector")
-			ch <- Event{"", "", 2}
+			ch <- Event{"", "", FLES_SourceFail}
 			return
 		}
 		frameBitRate := BITRATE[int(frameVersion)][bitrate]
 		sampleRate := (b & 0x0c) >> 2
 		if sampleRate == 0x03 {
 			log.Error("invalid samplerate value in radio collector")
-			ch <- Event{"", "", 2}
+			ch <- Event{"", "", FLES_SourceFail}
 			return
 		}
 		frameSampleRate := SAMPLERATE[int(frameVersion)][sampleRate]
