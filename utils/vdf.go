@@ -1,34 +1,33 @@
 package utils
 
 import (
-	"bytes"
-	"encoding/hex"
-	"encoding/json"
-	"log"
-	"math/rand"
-	"net/http"
-	"strconv"
+	"crypto/rand"
+
+	"github.com/chia-network/go-chia-libs/pkg/vdf"
+	log "github.com/sirupsen/logrus"
 )
 
-var server = ""
+const (
+	lambda     uint64 = 1024    // The discriminant size
+	iterations uint64 = 2000000 // Also denoted as T
+	form_size  int    = 100     // The size of the form
+)
 
-type proveResponse struct {
-	Y     string `json:"output"`
-	Proof string `json:"proof"`
-}
-
-type verifyResponse struct {
-	IsValid bool `json:"valid"`
-}
-
-func getRandomSeed() []byte {
-	seed := make([]byte, 16)
+func getRandomBytes(nBytes int) []byte {
+	seed := make([]byte, nBytes)
 	rand.Read(seed)
 	return seed
 }
 
-func setServer(newServer string) {
-	server = newServer
+func serializeInput(input []byte) []byte {
+	if len(input) >= form_size-1 {
+		log.Fatalf("Input is too large, must be less than %d bytes", form_size-1)
+		log.Exit(1)
+	}
+	expandedInput := append(make([]byte, form_size-len(input)-1), input...)
+	// Prepend the byte 0x08 to the input (VDF requires this byte to be present at the beginning of the input)
+	prependByte := byte(0x08)
+	return append([]byte{prependByte}, expandedInput...)
 }
 
 /*
@@ -36,46 +35,18 @@ VDFeval function
 receives:
 
 	x: input of VDF
-	T: number of iterations (squarings)
-	ds: discriminant size
 	seed: set randomness on discriminant creation
 
 returns:
 
 	(result, proof)
 */
-func VDFeval(T, ds int, x, seed []byte) ([]byte, []byte) {
-
-	postBody, _ := json.Marshal(map[string]string{
-		"seed":              hex.EncodeToString(seed),
-		"input":             hex.EncodeToString(x),
-		"iterations":        strconv.Itoa(T),
-		"discriminant_size": strconv.Itoa(ds),
-	})
-	responseBody := bytes.NewBuffer(postBody)
-
-	// Leverage Go's HTTP Post function to make request
-	resp, err := http.Post(server+"/eval", "application/json", responseBody)
-
-	// Handle Error
-	if err != nil {
-		log.Fatalf("An Error Occured %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	decoder := json.NewDecoder(resp.Body)
-	var s proveResponse
-	err = decoder.Decode(&s)
-
-	if err != nil {
-		panic(err)
-	}
-
-	y, _ := hex.DecodeString(s.Y)
-	p, _ := hex.DecodeString(s.Proof)
-
-	return y, p
+func VDFeval(x, seed []byte) ([]byte, []byte) {
+	serialX := serializeInput(x)
+	outVdf := vdf.Prove(seed, serialX, int(lambda), iterations)
+	y := outVdf[0:form_size]
+	proof := outVdf[form_size:]
+	return y, proof
 }
 
 /*
@@ -85,41 +56,14 @@ receives:
 	x: input of VDF
 	y: result of VDF
 	pi: the proof of VDF result
-	T: number of iterations (squarings)
-	ds: discriminant size
 	seed: set randomness on discriminant creation
 
 returns if verification was correct
 */
-func Verify(x, y, pi, seed []byte, T, ds int) bool {
-
-	postBody, _ := json.Marshal(map[string]string{
-		"seed":              hex.EncodeToString(seed),
-		"input":             hex.EncodeToString(x),
-		"output":            hex.EncodeToString(y),
-		"proof":             hex.EncodeToString(pi),
-		"discriminant_size": strconv.Itoa(ds),
-		"iterations":        strconv.Itoa(T),
-	})
-	responseBody := bytes.NewBuffer(postBody)
-
-	// Leverage Go's HTTP Post function to make request
-	resp, err := http.Post(server+"/verify", "application/json", responseBody)
-
-	// Handle Error
-	if err != nil {
-		log.Fatalf("An Error Occured %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	decoder := json.NewDecoder(resp.Body)
-	var s verifyResponse
-	err = decoder.Decode(&s)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return s.IsValid
+func Verify(x, y, pi, seed []byte) bool {
+	// Create discriminant
+	discriminant := vdf.CreateDiscriminant(seed, int(lambda))
+	// Verify the VDF
+	recursion := 0 // We do not use recursion for final output verification
+	return vdf.VerifyNWesolowski(discriminant, x, append(y, pi...), iterations, lambda, uint64(recursion))
 }
