@@ -50,7 +50,8 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 
 	hashedEvents := hashEvents(eventsCollected)
 
-	// VDF Params:
+	// VDF execution
+	log.Info("executing vdf...")
 	seed := getRandomBytes(16) // Challenge
 	vdfOutput, vdfProof := VDFeval(hashedEvents[:], seed)
 	log.Info("vdf done, saving...")
