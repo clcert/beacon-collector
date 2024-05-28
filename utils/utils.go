@@ -2,10 +2,6 @@ package utils
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
 	"sync"
 	"time"
 
@@ -53,10 +49,11 @@ func generateExternalValue(eventsCollected []string, timestamp time.Time) {
 	defer dbConn.Close()
 
 	hashedEvents := hashEvents(eventsCollected)
-	log.Info("computing vdf...")
 
-	seed := getRandomSeed()
-	vdfOutput, vdfProof := vdf(seed, hashedEvents)
+	// VDF execution
+	log.Info("executing vdf...")
+	seed := getRandomBytes(16) // Challenge
+	vdfOutput, vdfProof := VDFeval(hashedEvents[:], seed)
 	log.Info("vdf done, saving...")
 
 	vdfOutStr := hex.EncodeToString(vdfOutput)
@@ -87,29 +84,6 @@ func hashEvents(events []string) [64]byte {
 	}
 	byteEvents := []byte(concatenatedEvents)
 	return sha3.Sum512(byteEvents)
-}
-
-func vdf(seed []byte, events [64]byte) ([]byte, []byte) {
-	// Open our vdfConfig
-	jsonFile, err := os.Open("utils/vdfConfig.json")
-	// if we os.Open returns an error then handle it
-	if err != nil {
-		fmt.Println(err)
-	}
-	// defer the closing of our dbConfig so that we can parse it later on
-	defer jsonFile.Close()
-	byteValue, _ := io.ReadAll(jsonFile)
-
-	var vdfConfig map[string]string
-	json.Unmarshal(byteValue, &vdfConfig)
-
-	setServer(vdfConfig["vdfServer"])
-
-	lbda := 1024
-	T := 2000000
-
-	out, proof := VDFeval(T, lbda, events[:], seed)
-	return out, proof
 }
 
 func CleanOldEvents(wg *sync.WaitGroup) {

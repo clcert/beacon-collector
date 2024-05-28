@@ -17,7 +17,7 @@ func main() {
 	oneSecondInNs := 1000000000
 	for {
 		now := time.Now()
-		timeToWait := time.Duration(oneSecondInNs*(60-now.Second()) + (1000000000 - now.Nanosecond()) - oneSecondInNs + oneSecondInNs*secondMarkInit)
+		timeToWait := time.Duration(oneSecondInNs*(60-now.Second()) + (oneSecondInNs - now.Nanosecond()))
 		log.Info("waiting for the next minute...")
 		time.Sleep(timeToWait)
 		utils.AggregateEvents()
