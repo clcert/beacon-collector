@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/clcert/beacon-collector-go/collectors"
+	"github.com/clcert/beacon-collector/collectors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,6 +32,10 @@ func AggregateEvents() {
 	var ethCollector collectors.EthereumCollector
 	wg.Add(1)
 	go collectors.Process(ethCollector, nextRecordTimestamp, &wg)
+
+	var busesCollector collectors.BusesCollector
+	wg.Add(1)
+	go collectors.Process(busesCollector, nextRecordTimestamp, &wg)
 
 	wg.Add(1)
 	go CleanOldEvents(&wg)

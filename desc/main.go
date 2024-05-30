@@ -2,11 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/clcert/beacon-collector-go/db"
+	"github.com/clcert/beacon-collector/db"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 )
@@ -40,7 +39,7 @@ func insertDescriptionInDB(content string, digestedContent string) {
 
 func main() {
 	filename := os.Args[1]
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}
