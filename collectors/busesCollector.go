@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,9 +12,14 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/sha3"
 )
 
-const timeLayout = "02-01-2006 15:04:05"
+const (
+	timeLayout           = "02-01-2006 15:04:05"
+	canonicalTimeLayout  = "02/01/2006 15:04:05"
+	directionFieldLength = 4
+)
 
 type BusesCollector struct{}
 
@@ -22,8 +28,8 @@ type BusesLocation struct {
 }
 
 type BusLocation struct {
-	DateTime     time.Time `json:"dateTime"`
 	LicensePlate string    `json:"licensePlate"`
+	DateTime     time.Time `json:"dateTime"`
 	Lat          float64   `json:"lat"`
 	Lon          float64   `json:"lon"`
 	Speed        float64   `json:"speed"`
@@ -60,14 +66,14 @@ func (e BusesCollector) collectEvent(ch chan Event) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("error getting buses locations: %s", err)
 		ch <- Event{"", "", FLES_SourceFail}
 		return
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("error reading buses locations response: %s", err)
 		ch <- Event{"", "", FLES_SourceFail}
 		return
 	}
@@ -76,13 +82,20 @@ func (e BusesCollector) collectEvent(ch chan Event) {
 	var responseContent BusesResponse
 	err = json.Unmarshal(body, &responseContent)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("error unmarshalling buses locations json: %s", err)
 		ch <- Event{"", "", FLES_SourceFail}
 		return
 	}
 
-	log.Info("JSON Unmarshalled")
-	log.Info("Positions Found: " + strconv.Itoa(len(responseContent.RawPositions)))
+	log.Info("bus locations json unmarshalled")
+	log.Infof("buses found: %d", len(responseContent.RawPositions))
+
+	servicesParser := getServicesParser()
+	if servicesParser == nil {
+		log.Error("error loading services parser")
+		ch <- Event{"", "", FLES_SourceFail}
+		return
+	}
 
 	// Parse the buses locations
 	var buses BusesLocation
@@ -92,27 +105,81 @@ func (e BusesCollector) collectEvent(ch chan Event) {
 
 		busLocation.DateTime, err = time.Parse(timeLayout, rawData[0])
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 			continue
 		}
 		busLocation.LicensePlate = rawData[1]
 		busLocation.Lat, _ = strconv.ParseFloat(rawData[2], 64)
 		busLocation.Lon, _ = strconv.ParseFloat(rawData[3], 64)
 		busLocation.Speed, _ = strconv.ParseFloat(rawData[4], 64)
-		busLocation.Route = rawData[7]
+		busLocation.Route = rawData[9]
 		busLocation.Direction = rawData[8]
 
 		// Discard old records
-		oneMinuteAgo := time.Now().UTC().Add(-5 * time.Minute)
-		if busLocation.DateTime.Before(oneMinuteAgo) {
+		twoMinutesAgo := time.Now().UTC().Add(-2 * time.Minute)
+		if busLocation.DateTime.Before(twoMinutesAgo) {
 			continue
 		}
 
-		log.Info("bus location: " + busLocation.CanonicalForm())
+		// Assign user route code if possible
+		// (it may differ from internal route code)
+		rawRoute := busLocation.Route
+		if len(rawRoute) < 4 { // Invalid route code
+			busLocation.Route = "Unknown"
+		} else {
+			undirectedRouteCode := rawRoute[:len(rawRoute)-4]
+			// In transit to service buses have a different route code
+			if undirectedRouteCode[len(undirectedRouteCode)-2:] == "TS" {
+				busLocation.Route = "InTransit"
+			} else {
+				busLocation.Route = servicesParser[undirectedRouteCode]
+			}
+			// Not recognized route code
+			if busLocation.Route == "" {
+				busLocation.Route = "Unknown"
+			}
+		}
 		buses.BusesLocation = append(buses.BusesLocation, busLocation)
 	}
+	log.Infof("buses successfully parsed: %d", len(buses.BusesLocation))
 
-	log.Info("Positions Parsed: " + strconv.Itoa(len(buses.BusesLocation)))
+	busesRaw, _ := json.Marshal(buses)
+	busesRawStr := string(busesRaw)
+	busesMetadata := generateBusesMetadata(busesRawStr)
+	ch <- Event{busesRawStr, busesMetadata, 0}
+}
+
+func generateBusesMetadata(busesRaw string) string {
+	digest := sha3.Sum512([]byte(busesRaw))
+	return hex.EncodeToString(digest[:])
+}
+
+/*
+  - Loads the services.csv file and returns a dictionary that allows to
+    map the route code to the user route code.
+*/
+func getServicesParser() map[string]string {
+	serviceFile, err := os.Open("collectors/services.csv")
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	defer serviceFile.Close()
+	servicesParser := make(map[string]string)
+	byteValue, _ := io.ReadAll(serviceFile)
+	servicesData := strings.Split(string(byteValue), "\n")
+	for _, serviceData := range servicesData {
+		service := strings.Split(serviceData, ";")
+		if len(service) < 3 {
+			continue
+		}
+		userRouteCode := service[0]
+		serviceName := service[2]
+		undirectedServiceName := serviceName[:len(serviceName)-directionFieldLength]
+		servicesParser[undirectedServiceName] = userRouteCode
+	}
+
+	return servicesParser
 }
 
 func getBusesCredentials() (string, string) {
@@ -137,22 +204,28 @@ func (e BusesCollector) getCanonicalForm(data string) string {
 	if data == "" {
 		return ""
 	}
-	return ""
+	var buses BusesLocation
+	err := json.Unmarshal([]byte(data), &buses)
+	if err != nil {
+		log.Error(err)
+	}
+	return buses.CanonicalForm()
 }
 
-func (buses BusesLocation) BusesCanonicalForm() string {
+func (buses BusesLocation) CanonicalForm() string {
 	var busesCanonLst []string
 	for _, busLocation := range buses.BusesLocation {
 		busesCanonLst = append(busesCanonLst, busLocation.CanonicalForm())
 	}
-	busesCanon := strings.Join(busesCanonLst, "\n")
+	busesCanon := strings.Join(busesCanonLst, ";")
 	return busesCanon
 }
 
 func (b BusLocation) CanonicalForm() string {
+	tsCanonical := b.DateTime.Local().Format(canonicalTimeLayout)
 	latStr := strconv.FormatFloat(b.Lat, 'f', -1, 64)
 	lonStr := strconv.FormatFloat(b.Lon, 'f', -1, 64)
 	speedStr := strconv.FormatFloat(b.Speed, 'f', -1, 64)
-	values := []string{b.DateTime.Local().Format(timeLayout), b.LicensePlate, latStr, lonStr, speedStr, b.Route, b.Direction}
+	values := []string{b.LicensePlate, tsCanonical, latStr, lonStr, speedStr, b.Route, b.Direction}
 	return strings.Join(values, ";")
 }
