@@ -17,7 +17,7 @@ import (
 
 const (
 	timeLayout           = "02-01-2006 15:04:05"
-	canonicalTimeLayout  = "02/01/2006 15:04:05"
+	canonicalTimeLayout  = "15:04:05 02/01/2006"
 	directionFieldLength = 4
 )
 
@@ -28,13 +28,13 @@ type BusesLocation struct {
 }
 
 type BusLocation struct {
-	LicensePlate string    `json:"licensePlate"`
-	DateTime     time.Time `json:"dateTime"`
-	Lat          float64   `json:"lat"`
-	Lon          float64   `json:"lon"`
-	Speed        float64   `json:"speed"`
-	Route        string    `json:"route"`
-	Direction    string    `json:"direction"`
+	LicensePlate string  `json:"licensePlate"`
+	Utc          string  `json:"utc"`
+	Lat          float64 `json:"lat"`
+	Lon          float64 `json:"lon"`
+	Speed        float64 `json:"speed"`
+	Route        string  `json:"route"`
+	Direction    string  `json:"direction"`
 }
 
 type BusesResponse struct {
@@ -103,7 +103,7 @@ func (e BusesCollector) collectEvent(ch chan Event) {
 		var busLocation BusLocation
 		rawData := strings.Split(rawBusLocation, ";")
 
-		busLocation.DateTime, err = time.Parse(timeLayout, rawData[0])
+		locationUTC, err := time.Parse(timeLayout, rawData[0])
 		if err != nil {
 			log.Error(err)
 			continue
@@ -117,9 +117,10 @@ func (e BusesCollector) collectEvent(ch chan Event) {
 
 		// Discard old records
 		twoMinutesAgo := time.Now().UTC().Add(-2 * time.Minute)
-		if busLocation.DateTime.Before(twoMinutesAgo) {
+		if locationUTC.Before(twoMinutesAgo) {
 			continue
 		}
+		busLocation.Utc = locationUTC.Format(canonicalTimeLayout)
 
 		// Assign user route code if possible
 		// (it may differ from internal route code)
@@ -222,10 +223,9 @@ func (buses BusesLocation) CanonicalForm() string {
 }
 
 func (b BusLocation) CanonicalForm() string {
-	tsCanonical := b.DateTime.Local().Format(canonicalTimeLayout)
 	latStr := strconv.FormatFloat(b.Lat, 'f', -1, 64)
 	lonStr := strconv.FormatFloat(b.Lon, 'f', -1, 64)
 	speedStr := strconv.FormatFloat(b.Speed, 'f', -1, 64)
-	values := []string{b.LicensePlate, tsCanonical, latStr, lonStr, speedStr, b.Route, b.Direction}
+	values := []string{b.LicensePlate, b.Utc, latStr, lonStr, speedStr, b.Route, b.Direction}
 	return strings.Join(values, ";")
 }
