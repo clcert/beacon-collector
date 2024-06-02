@@ -1,4 +1,4 @@
-module github.com/clcert/beacon-collector-go
+module github.com/clcert/beacon-collector
 
 go 1.21
 

@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/clcert/beacon-collector-go/utils"
+	"github.com/clcert/beacon-collector/utils"
 	log "github.com/sirupsen/logrus"
 )
 

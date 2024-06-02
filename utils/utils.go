@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/clcert/beacon-collector-go/collectors"
-	"github.com/clcert/beacon-collector-go/db"
+	"github.com/clcert/beacon-collector/collectors"
+	"github.com/clcert/beacon-collector/db"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 )
