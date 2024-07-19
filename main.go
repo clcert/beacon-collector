@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/clcert/beacon-collector/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,12 +12,5 @@ func main() {
 		FullTimestamp: true,
 	})
 	log.SetLevel(log.DebugLevel)
-	oneSecondInNs := 1000000000
-	for {
-		now := time.Now()
-		timeToWait := time.Duration(oneSecondInNs*(60-now.Second()) + (oneSecondInNs - now.Nanosecond()))
-		log.Info("waiting for the next minute...")
-		time.Sleep(timeToWait)
-		utils.AggregateEvents()
-	}
+	utils.AggregateEvents()
 }

@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -43,17 +44,32 @@ func Process(c Collector, recordTimestamp time.Time, wg *sync.WaitGroup) {
 	defer dbConn.Close()
 
 	ch1 := make(chan Event, 1)
-	go c.collectEvent(ch1)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	go func() {
+		log.Infof("launching %s collection", c.sourceName())
+		c.collectEvent(ch1)
+		close(ch1)
+	}()
 
 	select {
-	case collectionResult := <-ch1:
+	case collectionResult, ok := <-ch1:
+		if !ok {
+			log.WithFields(log.Fields{
+				"pulseTimestamp": recordTimestamp,
+				"sourceName":     c.sourceName(),
+			}).Error("closed channel")
+			saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", FLES_FailCollection)
+		}
 		saveCollectionInDatabase(c, dbConn, recordTimestamp, collectionResult.Data, collectionResult.Metadata, collectionResult.StatusCollection)
-	case <-time.After(30 * time.Second):
+	case <-ctx.Done():
 		log.WithFields(log.Fields{
 			"pulseTimestamp": recordTimestamp,
 			"sourceName":     c.sourceName(),
 		}).Error("timeout")
-		saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", 2)
+		saveCollectionInDatabase(c, dbConn, recordTimestamp, "", "", FLES_FailCollection)
+		return
 	}
 }
 
